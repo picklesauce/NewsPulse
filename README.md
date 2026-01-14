@@ -13,5 +13,5 @@ We are a group of CS students who are absolutely the best at building great proj
 * Hanson Liu
 
 ## Documentation
-[Team Contract](../../wikis/Team-Contract)
+Our [Team Contract](../../wikis/Team-Contract) includes details on how we will work together.
 
