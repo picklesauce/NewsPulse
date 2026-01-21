@@ -12,6 +12,4 @@ We are a group of CS students who are absolutely the best at building great proj
 * Ayaan Sarfraz
 * Hanson Liu
 
-## Documentation
-Our [Team Contract](../../wikis/Team-Contract) includes details on how we will work together.
-
+## The idea
