@@ -7,11 +7,9 @@
 We are a group of CS students who are absolutely the best at building great projects. Look out for our CS346 project!
 
 ## The team members
-* Ball----deep Pannu
+* Balldeep Pannu
 * Aadit Shah
 * Ayaan Sarfraz
 * Hanson Liu
 
 ## The idea
-
-asdfsadfadfef
