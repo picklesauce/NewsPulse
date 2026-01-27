@@ -12,7 +12,7 @@ We are a group of CS students who are absolutely the best at building great proj
 * Ayaan Sarfraz
 * Hanson Liu
 
-## The idea
+## Useful Links
+* [Team Contract](../../wikis/Team-Contract)
+* [Project Proposal](../../wikis/Project-Proposal)
 
-asdfasdfasdfasfasdf
-bruh bruh bruh bruh
