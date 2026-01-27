@@ -15,4 +15,5 @@ We are a group of CS students who are absolutely the best at building great proj
 ## Useful Links
 * [Team Contract](../../wikis/Team-Contract)
 * [Project Proposal](../../wikis/Project-Proposal)
+* [Team Meetings](../../wikis/Team-Meetings)
 
