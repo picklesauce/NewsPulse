@@ -59,7 +59,7 @@ fun ArticleListScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { },
+                onClick = { navController.navigate("filters") },
                 modifier = Modifier
                     .weight(1f)
                     .height(40.dp),
