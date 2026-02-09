@@ -15,23 +15,29 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.newspulse.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
+    navController: NavController,
     viewModel: LoginViewModel = viewModel()
 ) {
-    val uiState = viewModel.uiState
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
+        FakeStatusBar()
+
         Surface(
             modifier = Modifier.fillMaxWidth(),
             color = Color.Black
@@ -66,7 +72,7 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = uiState.username,
-                    onValueChange = { },
+                    onValueChange = { viewModel.updateUsername(it) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -82,7 +88,7 @@ fun LoginScreen(
 
                 OutlinedTextField(
                     value = uiState.email,
-                    onValueChange = { },
+                    onValueChange = { viewModel.updateEmail(it) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -90,7 +96,9 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.weight(1f))
 
                 Button(
-                    onClick = { },
+                    onClick = {
+                        navController.navigate("articles")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
