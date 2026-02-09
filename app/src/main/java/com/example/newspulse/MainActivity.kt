@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.view.ArticleDetailScreen
 import com.example.newspulse.view.ArticleListScreen
+import com.example.newspulse.view.FiltersScreen
 import com.example.newspulse.view.LoginScreen
 
 class MainActivity : ComponentActivity() {
@@ -30,6 +31,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("articles") {
                         ArticleListScreen(navController = navController)
+                    }
+                    composable("filters") {
+                        FiltersScreen(navController = navController)
                     }
                     composable("articleDetail/{title}") { backStackEntry ->
                         val title = backStackEntry.arguments?.getString("title")
