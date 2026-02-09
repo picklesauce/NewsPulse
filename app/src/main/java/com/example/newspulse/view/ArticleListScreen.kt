@@ -76,7 +76,7 @@ fun ArticleListScreen(
             }
 
             OutlinedButton(
-                onClick = { },
+                onClick = { navController.navigate("savedArticles") },
                 modifier = Modifier
                     .weight(1f)
                     .height(40.dp),
