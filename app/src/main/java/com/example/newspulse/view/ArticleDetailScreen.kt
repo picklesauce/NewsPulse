@@ -29,15 +29,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.newspulse.model.Article
+import com.example.newspulse.store.SavedArticlesStore
+import com.example.newspulse.viewmodel.ArticleViewModel
 
 @Composable
 fun ArticleDetailScreen(
     navController: NavController,
-    title: String? = null
+    title: String? = null,
+    articleViewModel: ArticleViewModel = viewModel()
 ) {
     val articleTitle = title ?: "Article Not Found"
     val articleBody = generatePlaceholderBody()
+    
+    // Find the article from the list to get source and timeAgo
+    val article = articleViewModel.articles.find { it.title == articleTitle }
+    val source = article?.source ?: "Tech Daily"
+    val timeAgo = article?.hoursAgo ?: "2 hours ago"
+    
+    // Create Article object for saving
+    val articleToSave = Article(
+        title = articleTitle,
+        source = source,
+        hoursAgo = timeAgo
+    )
 
     Column(
         modifier = Modifier
@@ -46,8 +63,8 @@ fun ArticleDetailScreen(
     ) {
         ArticleTopBar(
             title = articleTitle,
-            source = "Tech Daily",
-            timeAgo = "2 hours ago",
+            source = source,
+            timeAgo = timeAgo,
             onBackClick = { navController.popBackStack() }
         )
 
@@ -55,7 +72,7 @@ fun ArticleDetailScreen(
             body = articleBody
         )
 
-        SaveOfflineButton()
+        SaveOfflineButton(article = articleToSave)
     }
 }
 
@@ -150,7 +167,9 @@ fun ColumnScope.ArticleContent(
 }
 
 @Composable
-fun SaveOfflineButton() {
+fun SaveOfflineButton(
+    article: Article
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.Black
@@ -162,7 +181,9 @@ fun SaveOfflineButton() {
             contentAlignment = Alignment.Center
         ) {
             Button(
-                onClick = { },
+                onClick = {
+                    SavedArticlesStore.saveArticle(article)
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
