@@ -30,6 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.newspulse.ui.theme.NewsPulseTheme
 
 @Composable
 fun FiltersScreen(
@@ -231,5 +234,13 @@ fun TopicRow(
             color = Color(0xFF333333),
             fontSize = 16.sp
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun FiltersScreenPreview() {
+    NewsPulseTheme {
+        FiltersScreen(navController = rememberNavController())
     }
 }

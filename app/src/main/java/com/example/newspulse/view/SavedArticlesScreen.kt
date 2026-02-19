@@ -25,7 +25,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.newspulse.store.SavedArticlesStore
+import com.example.newspulse.ui.theme.NewsPulseTheme
 
 @Composable
 fun SavedArticlesScreen(
@@ -158,5 +161,13 @@ fun SavedArticlesScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SavedArticlesScreenPreview() {
+    NewsPulseTheme {
+        SavedArticlesScreen(navController = rememberNavController())
     }
 }

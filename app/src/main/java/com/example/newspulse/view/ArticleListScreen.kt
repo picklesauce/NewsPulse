@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.viewmodel.ArticleViewModel
 
 @Composable
@@ -145,6 +148,14 @@ fun ArticleListScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ArticleListScreenPreview() {
+    NewsPulseTheme {
+        ArticleListScreen(navController = rememberNavController())
     }
 }
 

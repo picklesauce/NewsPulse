@@ -31,7 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.newspulse.model.Article
+import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.store.SavedArticlesStore
 import com.example.newspulse.viewmodel.ArticleViewModel
 
@@ -213,5 +216,16 @@ fun generatePlaceholderBody(): String {
 
         As the technology continues to mature, we can expect to see practical applications emerge in the coming years, marking a significant milestone in the evolution of computing technology.
     """.trimIndent()
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ArticleDetailScreenPreview() {
+    NewsPulseTheme {
+        ArticleDetailScreen(
+            navController = rememberNavController(),
+            title = "Breaking: Major Technology Breakthrough Announced by Researchers"
+        )
+    }
 }
 
