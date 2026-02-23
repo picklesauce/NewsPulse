@@ -26,9 +26,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,6 +53,10 @@ fun ArticleListScreen(
 ) {
     val articles by viewModel.articles.collectAsState()
     val selectedInterests = viewModel.selectedInterests
+
+    LaunchedEffect(Unit) {
+        viewModel.updateArticles()
+    }
 
     Column(
         modifier = Modifier
@@ -103,7 +108,7 @@ fun ArticleListScreen(
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = Color(0xFFF5F5F5),
-                    modifier = Modifier.clickable { /* chip tapped - could filter further */ }
+                    modifier = Modifier.clickable { viewModel.unfollowInterest(topic) }
                 ) {
                     Text(
                         text = topic,
