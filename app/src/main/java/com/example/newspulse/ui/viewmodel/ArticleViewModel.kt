@@ -1,13 +1,13 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.example.newspulse.domain.Model
+import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.Article
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class ArticleViewModel(private val model: Model) : ViewModel() {
+class ArticleViewModel(private val model: NewsPulseModel) : ViewModel() {
     private val _articles = MutableStateFlow(emptyList<Article>())
     val articles: StateFlow<List<Article>> = _articles.asStateFlow()
 
@@ -16,12 +16,12 @@ class ArticleViewModel(private val model: Model) : ViewModel() {
     }
 
     fun updateArticles() {
-        val all = model.getArticles()
-        val interests = model.getSelectedInterests()
+        val all = model.getFeed()
+        val interests = model.getFollowedInterestNames()
         val filtered = all.filter { it.matchesInterests(interests) }
         _articles.value = filtered
     }
 
-    val allArticles: List<Article> get() = model.getArticles()
-    val selectedInterests: Set<String> get() = model.getSelectedInterests()
+    val allArticles: List<Article> get() = model.getFeed()
+    val selectedInterests: Set<String> get() = model.getFollowedInterestNames()
 }

@@ -4,11 +4,18 @@ import com.example.newspulse.domain.InterestsRepository
 
 class FakeInterestsRepository : InterestsRepository {
     private var complete = false
-    private var topics = setOf<String>("Technology", "Business")
+    private val followedIds = mutableSetOf("interest-technology", "interest-business")
 
-    override fun getSelectedInterests(): Set<String> = topics
-    override fun setSelectedInterests(interests: Set<String>) {
-        topics = interests
+    override fun getFollowedInterestIds(): Set<String> = followedIds.toSet()
+    override fun setFollowedInterestIds(ids: Set<String>) {
+        followedIds.clear()
+        followedIds.addAll(ids)
+    }
+    override fun followInterest(id: String) {
+        followedIds.add(id)
+    }
+    override fun unfollowInterest(id: String) {
+        followedIds.remove(id)
     }
     override fun isOnboardingComplete(): Boolean = complete
     override fun setOnboardingComplete() {

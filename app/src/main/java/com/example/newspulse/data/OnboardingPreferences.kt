@@ -14,21 +14,33 @@ class OnboardingPreferences(context: Context) : InterestsRepository {
         prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETE, true).apply()
     }
 
-    override fun getSelectedInterests(): Set<String> {
-        val saved = prefs.getString(KEY_SELECTED_TOPICS, null) ?: return emptySet()
+    override fun getFollowedInterestIds(): Set<String> {
+        val saved = prefs.getString(KEY_FOLLOWED_IDS, null) ?: return emptySet()
         return if (saved.isEmpty()) emptySet() else saved.split(DELIMITER).toSet()
     }
 
-    override fun setSelectedInterests(interests: Set<String>) {
+    override fun setFollowedInterestIds(ids: Set<String>) {
         prefs.edit()
-            .putString(KEY_SELECTED_TOPICS, interests.joinToString(DELIMITER))
+            .putString(KEY_FOLLOWED_IDS, ids.joinToString(DELIMITER))
             .apply()
+    }
+
+    override fun followInterest(id: String) {
+        val current = getFollowedInterestIds().toMutableSet()
+        current.add(id)
+        setFollowedInterestIds(current)
+    }
+
+    override fun unfollowInterest(id: String) {
+        val current = getFollowedInterestIds().toMutableSet()
+        current.remove(id)
+        setFollowedInterestIds(current)
     }
 
     companion object {
         private const val PREFS_NAME = "onboarding"
         private const val KEY_ONBOARDING_COMPLETE = "has_completed_onboarding"
-        private const val KEY_SELECTED_TOPICS = "selected_topics"
+        private const val KEY_FOLLOWED_IDS = "followed_interest_ids"
         private const val DELIMITER = ","
     }
 }
