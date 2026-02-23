@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,27 +35,26 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.newspulse.domain.IReadingHistoryRepository
 import com.example.newspulse.domain.model.Article
-import com.example.newspulse.domain.store.SavedArticlesStore
+import com.example.newspulse.ui.CompositionLocals
+import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
-import com.example.newspulse.ui.viewmodel.ArticleViewModel
+import com.example.newspulse.ui.viewmodel.ArticleDetailViewModel
 
 @Composable
 fun ArticleDetailScreen(
     navController: NavController,
     title: String? = null,
-    readingHistoryPreferences: IReadingHistoryRepository? = null,
-    articleViewModel: ArticleViewModel = viewModel()
+    articleDetailViewModel: ArticleDetailViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
     val articleTitle = title ?: "Article Not Found"
     val articleBody = generatePlaceholderBody()
 
     LaunchedEffect(articleTitle) {
-        readingHistoryPreferences?.addToHistory(articleTitle)
+        articleDetailViewModel.addToReadingHistory(articleTitle)
     }
 
-    val article = articleViewModel.articles.find { it.title == articleTitle }
+    val article = articleDetailViewModel.getArticleByTitle(articleTitle)
     val source = article?.source ?: "Tech Daily"
     val timeAgo = article?.hoursAgo ?: "2 hours ago"
 
@@ -80,7 +80,10 @@ fun ArticleDetailScreen(
             body = articleBody
         )
 
-        SaveOfflineButton(article = articleToSave)
+        SaveOfflineButton(
+            article = articleToSave,
+            onSave = { articleDetailViewModel.saveArticle(it) }
+        )
     }
 }
 
@@ -176,7 +179,8 @@ fun ColumnScope.ArticleContent(
 
 @Composable
 fun SaveOfflineButton(
-    article: Article
+    article: Article,
+    onSave: (Article) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -189,9 +193,7 @@ fun SaveOfflineButton(
             contentAlignment = Alignment.Center
         ) {
             Button(
-                onClick = {
-                    SavedArticlesStore.saveArticle(article)
-                },
+                onClick = { onSave(article) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -227,9 +229,13 @@ fun generatePlaceholderBody(): String {
 @Composable
 private fun ArticleDetailScreenPreview() {
     NewsPulseTheme {
-        ArticleDetailScreen(
-            navController = rememberNavController(),
-            title = "Breaking: Major Technology Breakthrough Announced by Researchers"
-        )
+        CompositionLocalProvider(
+            CompositionLocals.LocalViewModelFactory provides createPreviewViewModelFactory()
+        ) {
+            ArticleDetailScreen(
+                navController = rememberNavController(),
+                title = "Breaking: Major Technology Breakthrough Announced by Researchers"
+            )
+        }
     }
 }

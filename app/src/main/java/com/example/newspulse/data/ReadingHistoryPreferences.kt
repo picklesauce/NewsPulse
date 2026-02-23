@@ -2,10 +2,10 @@ package com.example.newspulse.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.example.newspulse.domain.IReadingHistoryRepository
+import com.example.newspulse.domain.ReadingHistoryRepository
 import com.example.newspulse.domain.model.ReadingHistoryItem
 
-class ReadingHistoryPreferences(context: Context) : IReadingHistoryRepository {
+class ReadingHistoryPreferences(context: Context) : ReadingHistoryRepository {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     override fun getReadingHistory(): List<ReadingHistoryItem> {

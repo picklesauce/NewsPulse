@@ -2,9 +2,9 @@ package com.example.newspulse.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.example.newspulse.domain.IOnboardingPreferences
+import com.example.newspulse.domain.InterestsRepository
 
-class OnboardingPreferences(context: Context) : IOnboardingPreferences {
+class OnboardingPreferences(context: Context) : InterestsRepository {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     override fun isOnboardingComplete(): Boolean =
@@ -14,14 +14,14 @@ class OnboardingPreferences(context: Context) : IOnboardingPreferences {
         prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETE, true).apply()
     }
 
-    override fun getSelectedTopics(): Set<String> {
+    override fun getSelectedInterests(): Set<String> {
         val saved = prefs.getString(KEY_SELECTED_TOPICS, null) ?: return emptySet()
         return if (saved.isEmpty()) emptySet() else saved.split(DELIMITER).toSet()
     }
 
-    override fun setSelectedTopics(topics: Set<String>) {
+    override fun setSelectedInterests(interests: Set<String>) {
         prefs.edit()
-            .putString(KEY_SELECTED_TOPICS, topics.joinToString(DELIMITER))
+            .putString(KEY_SELECTED_TOPICS, interests.joinToString(DELIMITER))
             .apply()
     }
 

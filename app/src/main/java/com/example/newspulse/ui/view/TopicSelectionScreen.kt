@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -33,16 +34,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.newspulse.domain.IOnboardingPreferences
-import com.example.newspulse.ui.preview.FakeOnboardingPreferences
+import com.example.newspulse.ui.CompositionLocals
+import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.ui.viewmodel.TopicSelectionViewModel
 
 @Composable
 fun TopicSelectionScreen(
     navController: NavController,
-    onboardingPreferences: IOnboardingPreferences,
-    viewModel: TopicSelectionViewModel = viewModel()
+    viewModel: TopicSelectionViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedTopics by viewModel.selectedTopics.collectAsState()
@@ -130,8 +130,7 @@ fun TopicSelectionScreen(
 
         Button(
             onClick = {
-                onboardingPreferences.setOnboardingComplete()
-                onboardingPreferences.setSelectedTopics(selectedTopics)
+                viewModel.saveAndContinue()
                 navController.navigate("login") {
                     popUpTo("topicSelection") { inclusive = true }
                 }
@@ -162,9 +161,10 @@ fun TopicSelectionScreen(
 @Composable
 private fun TopicSelectionScreenPreview() {
     NewsPulseTheme {
-        TopicSelectionScreen(
-            navController = rememberNavController(),
-            onboardingPreferences = FakeOnboardingPreferences
-        )
+        CompositionLocalProvider(
+            CompositionLocals.LocalViewModelFactory provides createPreviewViewModelFactory()
+        ) {
+            TopicSelectionScreen(navController = rememberNavController())
+        }
     }
 }
