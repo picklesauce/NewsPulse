@@ -16,7 +16,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -28,22 +28,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.newspulse.domain.IUserPreferences
-import com.example.newspulse.ui.preview.FakeUserPreferences
+import com.example.newspulse.ui.CompositionLocals
+import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.ui.viewmodel.LoginViewModel
 
 @Composable
 fun LoginScreen(
     navController: NavController,
-    userPreferences: IUserPreferences,
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(Unit) {
-        viewModel.updateUsername(userPreferences.getUsername())
-    }
 
     Column(
         modifier = Modifier
@@ -109,8 +104,7 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        userPreferences.setUsername(uiState.username)
-                        userPreferences.setMemberSinceIfFirstTime()
+                        viewModel.saveLogin()
                         navController.navigate("home")
                     },
                     modifier = Modifier
@@ -152,9 +146,10 @@ fun LoginScreen(
 @Composable
 private fun LoginScreenPreview() {
     NewsPulseTheme {
-        LoginScreen(
-            navController = rememberNavController(),
-            userPreferences = FakeUserPreferences
-        )
+        CompositionLocalProvider(
+            CompositionLocals.LocalViewModelFactory provides createPreviewViewModelFactory()
+        ) {
+            LoginScreen(navController = rememberNavController())
+        }
     }
 }

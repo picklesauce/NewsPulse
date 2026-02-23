@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,26 +38,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.newspulse.domain.IOnboardingPreferences
-import com.example.newspulse.domain.IReadingHistoryRepository
-import com.example.newspulse.domain.IUserPreferences
-import com.example.newspulse.ui.preview.FakeOnboardingPreferences
-import com.example.newspulse.ui.preview.FakeReadingHistoryRepository
-import com.example.newspulse.ui.preview.FakeUserPreferences
-import com.example.newspulse.ui.theme.NewsPulseTheme
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.newspulse.ui.CompositionLocals
+import com.example.newspulse.ui.preview.createPreviewViewModelFactory
+import com.example.newspulse.ui.theme.NewsPulseTheme
+import com.example.newspulse.ui.viewmodel.ProfileViewModel
 
 @Composable
 fun ProfileScreen(
     navController: NavController,
-    userPreferences: IUserPreferences,
-    onboardingPreferences: IOnboardingPreferences,
-    readingHistoryPreferences: IReadingHistoryRepository
+    viewModel: ProfileViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
-    val username = userPreferences.getUsername().ifEmpty { "username123" }
-    val memberSince = userPreferences.getMemberSince()
-    val interests = onboardingPreferences.getSelectedTopics()
-    val readingHistory = readingHistoryPreferences.getReadingHistory()
+    val username = viewModel.username
+    val memberSince = viewModel.memberSince
+    val interests = viewModel.interests
+    val readingHistory = viewModel.readingHistory
 
     Column(
         modifier = Modifier
@@ -293,11 +290,10 @@ private fun formatTimeAgo(millis: Long): String {
 @Composable
 private fun ProfileScreenPreview() {
     NewsPulseTheme {
-        ProfileScreen(
-            navController = rememberNavController(),
-            userPreferences = FakeUserPreferences,
-            onboardingPreferences = FakeOnboardingPreferences,
-            readingHistoryPreferences = FakeReadingHistoryRepository
-        )
+        CompositionLocalProvider(
+            CompositionLocals.LocalViewModelFactory provides createPreviewViewModelFactory()
+        ) {
+            ProfileScreen(navController = rememberNavController())
+        }
     }
 }

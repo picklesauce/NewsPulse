@@ -1,0 +1,26 @@
+package com.example.newspulse.ui
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.newspulse.domain.Model
+import com.example.newspulse.ui.viewmodel.ArticleDetailViewModel
+import com.example.newspulse.ui.viewmodel.ArticleViewModel
+import com.example.newspulse.ui.viewmodel.LoginViewModel
+import com.example.newspulse.ui.viewmodel.ProfileViewModel
+import com.example.newspulse.ui.viewmodel.SavedArticlesViewModel
+import com.example.newspulse.ui.viewmodel.TopicSelectionViewModel
+
+class ViewModelFactory(private val model: Model) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return when {
+            modelClass.isAssignableFrom(ArticleViewModel::class.java) -> ArticleViewModel(model) as T
+            modelClass.isAssignableFrom(ArticleDetailViewModel::class.java) -> ArticleDetailViewModel(model) as T
+            modelClass.isAssignableFrom(TopicSelectionViewModel::class.java) -> TopicSelectionViewModel(model) as T
+            modelClass.isAssignableFrom(LoginViewModel::class.java) -> LoginViewModel(model) as T
+            modelClass.isAssignableFrom(ProfileViewModel::class.java) -> ProfileViewModel(model) as T
+            modelClass.isAssignableFrom(SavedArticlesViewModel::class.java) -> SavedArticlesViewModel(model) as T
+            else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
+        }
+    }
+}

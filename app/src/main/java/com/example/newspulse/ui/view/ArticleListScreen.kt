@@ -26,6 +26,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,26 +39,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.newspulse.domain.IOnboardingPreferences
 import com.example.newspulse.domain.model.Article
-import com.example.newspulse.ui.preview.FakeOnboardingPreferences
+import com.example.newspulse.ui.CompositionLocals
+import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.ui.viewmodel.ArticleViewModel
 
 @Composable
 fun ArticleListScreen(
     navController: NavController,
-    onboardingPreferences: IOnboardingPreferences,
-    viewModel: ArticleViewModel = viewModel()
+    viewModel: ArticleViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
-    val selectedInterests = onboardingPreferences.getSelectedTopics()
-    val filteredArticles = if (selectedInterests.isEmpty()) {
-        viewModel.allArticles
-    } else {
-        viewModel.allArticles.filter { article ->
-            article.topics.any { it in selectedInterests }
-        }
-    }
+    val articles by viewModel.articles.collectAsState()
+    val selectedInterests = viewModel.selectedInterests
 
     Column(
         modifier = Modifier
@@ -125,7 +121,7 @@ fun ArticleListScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            if (filteredArticles.isEmpty()) {
+            if (articles.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -139,7 +135,7 @@ fun ArticleListScreen(
                     )
                 }
             } else {
-                filteredArticles.forEach { article ->
+                articles.forEach { article ->
                     ArticleCard(
                         article = article,
                         onClick = { navController.navigate("articleDetail/${article.title}") }
@@ -221,9 +217,10 @@ private fun ArticleCard(
 @Composable
 private fun ArticleListScreenPreview() {
     NewsPulseTheme {
-        ArticleListScreen(
-            navController = rememberNavController(),
-            onboardingPreferences = FakeOnboardingPreferences
-        )
+        CompositionLocalProvider(
+            CompositionLocals.LocalViewModelFactory provides createPreviewViewModelFactory()
+        ) {
+            ArticleListScreen(navController = rememberNavController())
+        }
     }
 }
