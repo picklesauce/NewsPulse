@@ -2,7 +2,11 @@ package com.example.newspulse.data.mock
 
 import com.example.newspulse.domain.InterestsRepository
 
-class InMemoryInterestsRepository : InterestsRepository {
+/**
+ * Mock implementation of [InterestsRepository] for demo/testing.
+ * Persists follow/unfollow state in-memory for the app session.
+ */
+class MockInterestsRepository : InterestsRepository {
     private val _followedIds = mutableSetOf<String>()
     private var _onboardingComplete = false
 
