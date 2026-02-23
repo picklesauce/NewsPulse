@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.ui.viewmodel.ArticleDetailViewModel
 import com.example.newspulse.ui.viewmodel.ArticleViewModel
+import com.example.newspulse.ui.viewmodel.FiltersViewModel
 import com.example.newspulse.ui.viewmodel.LoginViewModel
 import com.example.newspulse.ui.viewmodel.ProfileViewModel
 import com.example.newspulse.ui.viewmodel.SavedArticlesViewModel
@@ -19,6 +20,7 @@ class ViewModelFactory(private val model: NewsPulseModel) : ViewModelProvider.Fa
             modelClass.isAssignableFrom(TopicSelectionViewModel::class.java) -> TopicSelectionViewModel(model) as T
             modelClass.isAssignableFrom(LoginViewModel::class.java) -> LoginViewModel(model) as T
             modelClass.isAssignableFrom(ProfileViewModel::class.java) -> ProfileViewModel(model) as T
+            modelClass.isAssignableFrom(FiltersViewModel::class.java) -> FiltersViewModel(model) as T
             modelClass.isAssignableFrom(SavedArticlesViewModel::class.java) -> SavedArticlesViewModel(model) as T
             else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
         }

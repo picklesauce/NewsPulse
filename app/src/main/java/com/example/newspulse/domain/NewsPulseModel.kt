@@ -32,6 +32,8 @@ class NewsPulseModel(
         interestsRepository.unfollowInterest(id)
     }
 
+    fun getFollowedInterestIds(): Set<String> = interestsRepository.getFollowedInterestIds()
+
     fun getFollowedInterests(): List<Interest> {
         val ids = interestsRepository.getFollowedInterestIds()
         return interestsCatalogRepository.getAllInterests().filter { it.id in ids }

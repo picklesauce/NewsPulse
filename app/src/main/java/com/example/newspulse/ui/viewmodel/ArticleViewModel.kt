@@ -22,6 +22,12 @@ class ArticleViewModel(private val model: NewsPulseModel) : ViewModel() {
         _articles.value = filtered
     }
 
+    fun unfollowInterest(name: String) {
+        val id = model.getAllInterests().find { it.name == name }?.id ?: return
+        model.unfollowInterest(id)
+        updateArticles()
+    }
+
     val allArticles: List<Article> get() = model.getFeed()
     val selectedInterests: Set<String> get() = model.getFollowedInterestNames()
 }
