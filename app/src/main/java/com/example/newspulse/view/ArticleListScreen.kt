@@ -1,7 +1,10 @@
 package com.example.newspulse.view
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,17 +12,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -28,125 +35,188 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.newspulse.model.Article
+import com.example.newspulse.preferences.OnboardingPreferences
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.viewmodel.ArticleViewModel
 
 @Composable
 fun ArticleListScreen(
     navController: NavController,
+    onboardingPreferences: OnboardingPreferences,
     viewModel: ArticleViewModel = viewModel()
 ) {
+    val selectedInterests = onboardingPreferences.getSelectedTopics()
+    val filteredArticles = if (selectedInterests.isEmpty()) {
+        viewModel.allArticles
+    } else {
+        viewModel.allArticles.filter { article ->
+            article.topics.any { it in selectedInterests }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
     ) {
+        // Header: NewsPulse + Search + Profile
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.Black
+            color = Color.White
         ) {
-            Text(
-                text = "NewsHub",
-                modifier = Modifier.padding(16.dp),
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "NewsPulse",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1C1B1F)
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = { /* TODO: search */ }) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = Color(0xFF1C1B1F)
+                    )
+                }
+                IconButton(onClick = { navController.navigate("profile") }) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = Color(0xFF1C1B1F)
+                    )
+                }
+            }
         }
 
+        // Topic filter chips - horizontally scrollable
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(
-                onClick = { navController.navigate("filters") },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black
-                )
-            ) {
-                Text(
-                    text = "Filters",
-                    color = Color.White,
-                    fontSize = 14.sp
-                )
-            }
-
-            OutlinedButton(
-                onClick = { navController.navigate("savedArticles") },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Text(
-                    text = "Saved",
-                    color = Color.Black,
-                    fontSize = 14.sp
-                )
+            selectedInterests.forEach { topic ->
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFFF5F5F5),
+                    modifier = Modifier.clickable { /* chip tapped - could filter further */ }
+                ) {
+                    Text(
+                        text = topic,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        fontSize = 14.sp,
+                        color = Color(0xFF333333)
+                    )
+                }
             }
         }
 
+        // Article cards
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            viewModel.articles.forEachIndexed { index, article ->
-                Column(
+            if (filteredArticles.isEmpty()) {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            navController.navigate("articleDetail/${article.title}")
-                        }
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     Text(
-                        text = article.title,
-                        color = Color.Black,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        text = "No articles match your interests",
+                        color = Color(0xFF79747E),
+                        fontSize = 16.sp
                     )
+                }
+            } else {
+                filteredArticles.forEach { article ->
+                    ArticleCard(
+                        article = article,
+                        onClick = { navController.navigate("articleDetail/${article.title}") }
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
 
-                    Row(
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    ) {
-                        Text(
-                            text = article.source,
-                            color = Color(0xFF666666),
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = " • ",
-                            color = Color(0xFF666666),
-                            fontSize = 12.sp
-                        )
-                        Text(
-                            text = article.hoursAgo,
-                            color = Color(0xFF666666),
-                            fontSize = 12.sp
-                        )
-                    }
-
-                    if (index < viewModel.articles.size - 1) {
-                        Divider(
-                            color = Color(0xFFE0E0E0),
-                            thickness = 1.dp
-                        )
-                    }
+@Composable
+private fun ArticleCard(
+    article: Article,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        shadowElevation = 2.dp
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Image placeholder
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .background(Color(0xFFE7E0EC)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "[IMAGE]",
+                    color = Color(0xFF79747E),
+                    fontSize = 14.sp
+                )
+            }
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = article.title,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1C1B1F),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = article.source,
+                        fontSize = 12.sp,
+                        color = Color(0xFF79747E)
+                    )
+                    Text(
+                        text = article.hoursAgo,
+                        fontSize = 12.sp,
+                        color = Color(0xFF79747E)
+                    )
+                }
+                if (article.snippet.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = article.snippet,
+                        fontSize = 14.sp,
+                        color = Color(0xFF49454F),
+                        lineHeight = 20.sp,
+                        maxLines = 3
+                    )
                 }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -155,7 +225,9 @@ fun ArticleListScreen(
 @Composable
 private fun ArticleListScreenPreview() {
     NewsPulseTheme {
-        ArticleListScreen(navController = rememberNavController())
+        ArticleListScreen(
+            navController = rememberNavController(),
+            onboardingPreferences = OnboardingPreferences(LocalContext.current)
+        )
     }
 }
-

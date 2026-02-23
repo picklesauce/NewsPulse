@@ -33,7 +33,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.LaunchedEffect
 import com.example.newspulse.model.Article
+import com.example.newspulse.preferences.ReadingHistoryPreferences
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.store.SavedArticlesStore
 import com.example.newspulse.viewmodel.ArticleViewModel
@@ -42,10 +44,15 @@ import com.example.newspulse.viewmodel.ArticleViewModel
 fun ArticleDetailScreen(
     navController: NavController,
     title: String? = null,
+    readingHistoryPreferences: ReadingHistoryPreferences? = null,
     articleViewModel: ArticleViewModel = viewModel()
 ) {
     val articleTitle = title ?: "Article Not Found"
     val articleBody = generatePlaceholderBody()
+
+    LaunchedEffect(articleTitle) {
+        readingHistoryPreferences?.addToHistory(articleTitle)
+    }
     
     // Find the article from the list to get source and timeAgo
     val article = articleViewModel.articles.find { it.title == articleTitle }
