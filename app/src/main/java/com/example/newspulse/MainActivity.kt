@@ -4,47 +4,98 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.newspulse.preferences.OnboardingPreferences
+import com.example.newspulse.preferences.ReadingHistoryPreferences
+import com.example.newspulse.preferences.UserPreferences
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.view.ArticleDetailScreen
 import com.example.newspulse.view.ArticleListScreen
+import com.example.newspulse.view.ExploreScreen
 import com.example.newspulse.view.FiltersScreen
 import com.example.newspulse.view.LoginScreen
+import com.example.newspulse.view.NewsPulseScaffold
+import com.example.newspulse.view.ProfileScreen
 import com.example.newspulse.view.SavedArticlesScreen
+import com.example.newspulse.view.TopicSelectionScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val onboardingPreferences = OnboardingPreferences(this)
+        val userPreferences = UserPreferences(this)
+        val readingHistoryPreferences = ReadingHistoryPreferences(this)
+
         setContent {
             NewsPulseTheme {
                 val navController = rememberNavController()
-                
+                val startDestination = remember {
+                    if (onboardingPreferences.isOnboardingComplete()) "login" else "topicSelection"
+                }
+
                 NavHost(
                     navController = navController,
-                    startDestination = "login"
+                    startDestination = startDestination
                 ) {
-                    composable("login") {
-                        LoginScreen(navController = navController)
+                    composable("topicSelection") {
+                        TopicSelectionScreen(
+                            navController = navController,
+                            onboardingPreferences = onboardingPreferences
+                        )
                     }
-                    composable("articles") {
-                        ArticleListScreen(navController = navController)
+                    composable("login") {
+                        LoginScreen(
+                            navController = navController,
+                            userPreferences = userPreferences
+                        )
+                    }
+                    composable("home") {
+                        NewsPulseScaffold(navController = navController) {
+                            ArticleListScreen(
+                                navController = navController,
+                                onboardingPreferences = onboardingPreferences
+                            )
+                        }
+                    }
+                    composable("explore") {
+                        NewsPulseScaffold(navController = navController) {
+                            ExploreScreen(navController = navController)
+                        }
+                    }
+                    composable("saved") {
+                        NewsPulseScaffold(navController = navController) {
+                            SavedArticlesScreen(navController = navController)
+                        }
+                    }
+                    composable("profile") {
+                        NewsPulseScaffold(navController = navController) {
+                            ProfileScreen(
+                                navController = navController,
+                                userPreferences = userPreferences,
+                                onboardingPreferences = onboardingPreferences,
+                                readingHistoryPreferences = readingHistoryPreferences
+                            )
+                        }
                     }
                     composable("filters") {
-                        FiltersScreen(navController = navController)
-                    }
-                    composable("savedArticles") {
-                        SavedArticlesScreen(navController = navController)
+                        NewsPulseScaffold(navController = navController) {
+                            FiltersScreen(navController = navController)
+                        }
                     }
                     composable("articleDetail/{title}") { backStackEntry ->
                         val title = backStackEntry.arguments?.getString("title")
-                        ArticleDetailScreen(
-                            navController = navController,
-                            title = title
-                        )
+                        NewsPulseScaffold(navController = navController) {
+                            ArticleDetailScreen(
+                                navController = navController,
+                                title = title,
+                                readingHistoryPreferences = readingHistoryPreferences
+                            )
+                        }
                     }
                 }
             }
