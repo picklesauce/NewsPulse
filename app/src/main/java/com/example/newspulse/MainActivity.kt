@@ -11,7 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.newspulse.data.ReadingHistoryPreferences
 import com.example.newspulse.data.UserPreferences
-import com.example.newspulse.data.mock.InMemoryInterestsRepository
+import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.InMemorySavedArticlesRepository
 import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockNewsRepository
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
 
         val model = NewsPulseModel(
             newsRepository = MockNewsRepository(),
-            interestsRepository = InMemoryInterestsRepository(),
+            interestsRepository = MockInterestsRepository(),
             interestsCatalogRepository = MockInterestsCatalogRepository(),
             userPreferencesRepository = UserPreferences(this),
             readingHistoryRepository = ReadingHistoryPreferences(this),
