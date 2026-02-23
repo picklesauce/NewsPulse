@@ -9,13 +9,13 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.newspulse.data.OnboardingPreferences
 import com.example.newspulse.data.ReadingHistoryPreferences
 import com.example.newspulse.data.UserPreferences
+import com.example.newspulse.data.mock.InMemoryInterestsRepository
 import com.example.newspulse.data.mock.InMemorySavedArticlesRepository
+import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockNewsRepository
-import com.example.newspulse.data.mock.MockTopicsCatalogRepository
-import com.example.newspulse.domain.Model
+import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.ui.CompositionLocals
 import com.example.newspulse.ui.ViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
@@ -34,13 +34,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val model = Model(
+        val model = NewsPulseModel(
             newsRepository = MockNewsRepository(),
-            interestsRepository = OnboardingPreferences(this),
+            interestsRepository = InMemoryInterestsRepository(),
+            interestsCatalogRepository = MockInterestsCatalogRepository(),
             userPreferencesRepository = UserPreferences(this),
             readingHistoryRepository = ReadingHistoryPreferences(this),
-            savedArticlesRepository = InMemorySavedArticlesRepository(),
-            topicsCatalogRepository = MockTopicsCatalogRepository()
+            savedArticlesRepository = InMemorySavedArticlesRepository()
         )
         val viewModelFactory = ViewModelFactory(model)
 

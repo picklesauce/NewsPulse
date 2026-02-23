@@ -4,18 +4,18 @@ import com.example.newspulse.data.mock.FakeInterestsRepository
 import com.example.newspulse.data.mock.FakeNewsRepository
 import com.example.newspulse.data.mock.FakeReadingHistoryRepository
 import com.example.newspulse.data.mock.FakeSavedArticlesRepository
-import com.example.newspulse.data.mock.FakeTopicsCatalogRepository
 import com.example.newspulse.data.mock.FakeUserPreferencesRepository
-import com.example.newspulse.domain.Model
+import com.example.newspulse.data.mock.MockInterestsCatalogRepository
+import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.ui.ViewModelFactory
 
-fun createPreviewModel(): Model = Model(
+fun createPreviewModel(): NewsPulseModel = NewsPulseModel(
     newsRepository = FakeNewsRepository(),
     interestsRepository = FakeInterestsRepository(),
+    interestsCatalogRepository = MockInterestsCatalogRepository(),
     userPreferencesRepository = FakeUserPreferencesRepository(),
     readingHistoryRepository = FakeReadingHistoryRepository(),
-    savedArticlesRepository = FakeSavedArticlesRepository(),
-    topicsCatalogRepository = FakeTopicsCatalogRepository()
+    savedArticlesRepository = FakeSavedArticlesRepository()
 )
 
 fun createPreviewViewModelFactory(): ViewModelFactory = ViewModelFactory(createPreviewModel())

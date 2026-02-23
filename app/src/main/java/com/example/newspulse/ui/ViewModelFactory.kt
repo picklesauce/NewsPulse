@@ -2,7 +2,7 @@ package com.example.newspulse.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.newspulse.domain.Model
+import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.ui.viewmodel.ArticleDetailViewModel
 import com.example.newspulse.ui.viewmodel.ArticleViewModel
 import com.example.newspulse.ui.viewmodel.LoginViewModel
@@ -10,7 +10,7 @@ import com.example.newspulse.ui.viewmodel.ProfileViewModel
 import com.example.newspulse.ui.viewmodel.SavedArticlesViewModel
 import com.example.newspulse.ui.viewmodel.TopicSelectionViewModel
 
-class ViewModelFactory(private val model: Model) : ViewModelProvider.Factory {
+class ViewModelFactory(private val model: NewsPulseModel) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
