@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.ui.viewmodel.ArticleDetailViewModel
-import com.example.newspulse.ui.viewmodel.ArticleViewModel
+import com.example.newspulse.ui.viewmodel.FeedViewModel
 import com.example.newspulse.ui.viewmodel.FiltersViewModel
 import com.example.newspulse.ui.viewmodel.LoginViewModel
 import com.example.newspulse.ui.viewmodel.ProfileViewModel
@@ -15,7 +15,7 @@ class ViewModelFactory(private val model: NewsPulseModel) : ViewModelProvider.Fa
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
-            modelClass.isAssignableFrom(ArticleViewModel::class.java) -> ArticleViewModel(model) as T
+            modelClass.isAssignableFrom(FeedViewModel::class.java) -> FeedViewModel(model) as T
             modelClass.isAssignableFrom(ArticleDetailViewModel::class.java) -> ArticleDetailViewModel(model) as T
             modelClass.isAssignableFrom(TopicSelectionViewModel::class.java) -> TopicSelectionViewModel(model) as T
             modelClass.isAssignableFrom(LoginViewModel::class.java) -> LoginViewModel(model) as T
