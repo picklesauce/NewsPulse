@@ -18,13 +18,7 @@ class ArticleViewModel(private val model: Model) : ViewModel() {
     fun updateArticles() {
         val all = model.getArticles()
         val interests = model.getSelectedInterests()
-        val filtered = if (interests.isEmpty()) {
-            all
-        } else {
-            all.filter { article ->
-                article.interests.any { it.name in interests }
-            }
-        }
+        val filtered = all.filter { it.matchesInterests(interests) }
         _articles.value = filtered
     }
 

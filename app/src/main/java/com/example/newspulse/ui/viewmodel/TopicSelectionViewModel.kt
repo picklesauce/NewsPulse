@@ -2,6 +2,7 @@ package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.newspulse.domain.Model
+import com.example.newspulse.domain.util.filterMatchingQuery
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,14 +31,7 @@ class TopicSelectionViewModel(private val model: Model) : ViewModel() {
         }
     }
 
-    fun getFilteredTopics(): List<String> {
-        val query = _searchQuery.value.trim().lowercase()
-        return if (query.isEmpty()) {
-            allTopics
-        } else {
-            allTopics.filter { it.lowercase().contains(query) }
-        }
-    }
+    fun getFilteredTopics(): List<String> = allTopics.filterMatchingQuery(_searchQuery.value)
 
     fun saveAndContinue() {
         model.setSelectedInterests(_selectedTopics.value)
