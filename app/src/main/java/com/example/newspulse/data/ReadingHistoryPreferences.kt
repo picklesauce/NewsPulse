@@ -14,22 +14,31 @@ class ReadingHistoryPreferences(context: Context) : ReadingHistoryRepository {
         return raw.split(ENTRY_DELIMITER)
             .mapNotNull { entry ->
                 val parts = entry.split(FIELD_DELIMITER)
-                if (parts.size == 2) {
-                    ReadingHistoryItem(
+                when {
+                    parts.size == 3 -> ReadingHistoryItem(
+                        articleId = parts[0],
+                        title = parts[1],
+                        readAtMillis = parts[2].toLongOrNull() ?: 0L
+                    )
+                    parts.size == 2 -> ReadingHistoryItem(
+                        articleId = parts[0],
                         title = parts[0],
                         readAtMillis = parts[1].toLongOrNull() ?: 0L
                     )
-                } else null
+                    else -> null
+                }
             }
             .sortedByDescending { it.readAtMillis }
             .take(MAX_ITEMS)
     }
 
-    override fun addToHistory(title: String) {
+    override fun addToHistory(articleId: String, title: String) {
         val existing = getReadingHistory()
-        val filtered = existing.filter { it.title != title }
-        val updated = listOf(ReadingHistoryItem(title, System.currentTimeMillis())) + filtered
-        val encoded = updated.take(MAX_ITEMS).joinToString(ENTRY_DELIMITER) { "${it.title}$FIELD_DELIMITER${it.readAtMillis}" }
+        val filtered = existing.filter { it.articleId != articleId }
+        val updated = listOf(ReadingHistoryItem(articleId, title, System.currentTimeMillis())) + filtered
+        val encoded = updated.take(MAX_ITEMS).joinToString(ENTRY_DELIMITER) {
+            "${it.articleId}$FIELD_DELIMITER${it.title}$FIELD_DELIMITER${it.readAtMillis}"
+        }
         prefs.edit().putString(KEY_HISTORY, encoded).apply()
     }
 

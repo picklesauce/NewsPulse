@@ -194,7 +194,7 @@ fun ProfileScreen(
                     ReadingHistoryCard(
                         title = item.title,
                         timeAgo = formatTimeAgo(item.readAtMillis),
-                        onClick = { navController.navigate("articleDetail/${item.title}") }
+                        onClick = { navController.navigate("articleDetail/${item.articleId}") }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }

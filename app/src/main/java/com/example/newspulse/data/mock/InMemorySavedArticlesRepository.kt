@@ -12,7 +12,7 @@ class InMemorySavedArticlesRepository : SavedArticlesRepository {
 
     override fun saveArticle(article: Article) {
         val current = _savedArticles.value.toMutableList()
-        if (!current.any { it.title == article.title }) {
+        if (!current.any { it.id == article.id }) {
             current.add(article)
             _savedArticles.value = current
         }
@@ -20,7 +20,7 @@ class InMemorySavedArticlesRepository : SavedArticlesRepository {
 
     override fun removeArticle(article: Article) {
         val current = _savedArticles.value.toMutableList()
-        current.removeAll { it.title == article.title }
+        current.removeAll { it.id == article.id }
         _savedArticles.value = current
     }
 }

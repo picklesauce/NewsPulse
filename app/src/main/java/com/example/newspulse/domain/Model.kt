@@ -13,6 +13,9 @@ class Model(
     private val topicsCatalogRepository: TopicsCatalogRepository
 ) {
     fun getArticles(): List<Article> = newsRepository.getArticles()
+    fun getArticleById(id: String): Article? = newsRepository.getArticles().find { it.id == id }
+    fun getArticleByTitleOrId(key: String): Article? =
+        getArticleById(key) ?: newsRepository.getArticles().find { it.title == key }
     fun getSelectedInterests(): Set<String> = interestsRepository.getSelectedInterests()
     fun setSelectedInterests(interests: Set<String>) {
         interestsRepository.setSelectedInterests(interests)
@@ -30,8 +33,8 @@ class Model(
         userPreferencesRepository.setMemberSinceIfFirstTime()
     }
     fun getReadingHistory(): List<ReadingHistoryItem> = readingHistoryRepository.getReadingHistory()
-    fun addToReadingHistory(title: String) {
-        readingHistoryRepository.addToHistory(title)
+    fun addToReadingHistory(articleId: String, title: String) {
+        readingHistoryRepository.addToHistory(articleId, title)
     }
     fun getSavedArticles(): Flow<List<Article>> = savedArticlesRepository.getSavedArticles()
     fun saveArticle(article: Article) {

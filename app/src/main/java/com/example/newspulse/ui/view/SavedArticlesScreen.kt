@@ -112,7 +112,7 @@ fun SavedArticlesScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    navController.navigate("articleDetail/${article.title}")
+                                    navController.navigate("articleDetail/${article.id}")
                                 }
                         ) {
                             Spacer(modifier = Modifier.height(16.dp))
