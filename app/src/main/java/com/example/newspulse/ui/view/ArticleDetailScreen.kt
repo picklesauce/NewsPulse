@@ -44,25 +44,18 @@ import com.example.newspulse.ui.viewmodel.ArticleDetailViewModel
 @Composable
 fun ArticleDetailScreen(
     navController: NavController,
-    title: String? = null,
+    articleId: String? = null,
     articleDetailViewModel: ArticleDetailViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
-    val articleTitle = title ?: "Article Not Found"
-    val articleBody = generatePlaceholderBody()
-
-    LaunchedEffect(articleTitle) {
-        articleDetailViewModel.addToReadingHistory(articleTitle)
-    }
-
-    val article = articleDetailViewModel.getArticleByTitle(articleTitle)
+    val article = articleId?.let { articleDetailViewModel.getArticleById(it) }
+    val displayTitle = article?.title ?: "Article Not Found"
     val source = article?.source ?: "Tech Daily"
     val timeAgo = article?.hoursAgo ?: "2 hours ago"
+    val articleBody = generatePlaceholderBody()
 
-    val articleToSave = Article(
-        title = articleTitle,
-        source = source,
-        hoursAgo = timeAgo
-    )
+    LaunchedEffect(articleId) {
+        article?.let { articleDetailViewModel.addToReadingHistory(it.id, it.title) }
+    }
 
     Column(
         modifier = Modifier
@@ -70,7 +63,7 @@ fun ArticleDetailScreen(
             .statusBarsPadding()
     ) {
         ArticleTopBar(
-            title = articleTitle,
+            title = displayTitle,
             source = source,
             timeAgo = timeAgo,
             onBackClick = { navController.popBackStack() }
@@ -80,10 +73,12 @@ fun ArticleDetailScreen(
             body = articleBody
         )
 
-        SaveOfflineButton(
-            article = articleToSave,
-            onSave = { articleDetailViewModel.saveArticle(it) }
-        )
+        article?.let { a ->
+            SaveOfflineButton(
+                article = a,
+                onSave = { articleDetailViewModel.saveArticle(it) }
+            )
+        }
     }
 }
 
@@ -234,7 +229,7 @@ private fun ArticleDetailScreenPreview() {
         ) {
             ArticleDetailScreen(
                 navController = rememberNavController(),
-                title = "Breaking: Major Technology Breakthrough Announced by Researchers"
+                articleId = "art-1"
             )
         }
     }

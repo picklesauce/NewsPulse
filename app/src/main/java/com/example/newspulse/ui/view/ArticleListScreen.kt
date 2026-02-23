@@ -138,7 +138,7 @@ fun ArticleListScreen(
                 articles.forEach { article ->
                     ArticleCard(
                         article = article,
-                        onClick = { navController.navigate("articleDetail/${article.title}") }
+                        onClick = { navController.navigate("articleDetail/${article.id}") }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }

@@ -89,12 +89,12 @@ class MainActivity : ComponentActivity() {
                                 FiltersScreen(navController = navController)
                             }
                         }
-                        composable("articleDetail/{title}") { backStackEntry ->
-                            val title = backStackEntry.arguments?.getString("title")
+                        composable("articleDetail/{id}") { backStackEntry ->
+                            val articleId = backStackEntry.arguments?.getString("id")
                             NewsPulseScaffold(navController = navController) {
                                 ArticleDetailScreen(
                                     navController = navController,
-                                    title = title
+                                    articleId = articleId
                                 )
                             }
                         }

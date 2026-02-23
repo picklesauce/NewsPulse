@@ -22,7 +22,7 @@ class ArticleViewModel(private val model: Model) : ViewModel() {
             all
         } else {
             all.filter { article ->
-                article.topics.any { it in interests }
+                article.interests.any { it.name in interests }
             }
         }
         _articles.value = filtered

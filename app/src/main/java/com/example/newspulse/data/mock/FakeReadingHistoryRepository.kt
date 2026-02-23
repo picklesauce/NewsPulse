@@ -5,5 +5,5 @@ import com.example.newspulse.domain.model.ReadingHistoryItem
 
 class FakeReadingHistoryRepository : ReadingHistoryRepository {
     override fun getReadingHistory(): List<ReadingHistoryItem> = emptyList()
-    override fun addToHistory(title: String) {}
+    override fun addToHistory(articleId: String, title: String) {}
 }
