@@ -23,6 +23,7 @@ import com.example.newspulse.ui.view.ArticleDetailScreen
 import com.example.newspulse.ui.view.ArticleListScreen
 import com.example.newspulse.ui.view.ExploreScreen
 import com.example.newspulse.ui.view.FiltersScreen
+import com.example.newspulse.ui.view.InterestsScreen
 import com.example.newspulse.ui.view.LoginScreen
 import com.example.newspulse.ui.view.NewsPulseScaffold
 import com.example.newspulse.ui.view.ProfileScreen
@@ -87,6 +88,11 @@ class MainActivity : ComponentActivity() {
                         composable("filters") {
                             NewsPulseScaffold(navController = navController) {
                                 FiltersScreen(navController = navController)
+                            }
+                        }
+                        composable("interests") {
+                            NewsPulseScaffold(navController = navController) {
+                                InterestsScreen(navController = navController)
                             }
                         }
                         composable("articleDetail/{id}") { backStackEntry ->

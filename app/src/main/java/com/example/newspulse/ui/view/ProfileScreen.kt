@@ -160,7 +160,7 @@ fun ProfileScreen(
             }
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
-                onClick = { navController.navigate("filters") },
+                onClick = { navController.navigate("interests") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
