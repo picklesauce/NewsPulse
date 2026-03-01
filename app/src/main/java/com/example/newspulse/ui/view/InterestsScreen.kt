@@ -46,9 +46,7 @@ fun InterestsScreen(
     navController: NavController,
     viewModel: InterestsViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
-    val followedIds by viewModel.followedIds.collectAsState()
-    val typeFilter by viewModel.typeFilter.collectAsState()
-    val groups = viewModel.getInterestsToShow()
+    val state by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -81,14 +79,14 @@ fun InterestsScreen(
                         .padding(end = 40.dp)
                 ) {
                     Text(
-                        text = "Interests",
+                        text = state.headerTitle,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1C1B1F)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Follow or unfollow to personalize your feed. Changes apply immediately.",
+                        text = state.subtitle,
                         fontSize = 14.sp,
                         color = Color(0xFF79747E),
                         lineHeight = 20.sp
@@ -106,19 +104,20 @@ fun InterestsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             TypeFilterChips(
-                currentFilter = typeFilter,
+                currentFilter = state.typeFilter,
+                filterAllLabel = state.filterAllLabel,
                 onFilterChange = viewModel::setTypeFilter
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            typeFilter?.let { current ->
+            state.typeFilter?.let { current ->
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     color = Color(0xFFF5F5F5)
                 ) {
                     Text(
-                        text = "Showing: ${current.name}",
+                        text = state.showingFilterLabel.replace("%s", current.name),
                         modifier = Modifier.padding(12.dp),
                         fontSize = 14.sp,
                         color = Color(0xFF49454F)
@@ -127,13 +126,13 @@ fun InterestsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            groups.forEach { (type, interests) ->
+            state.interestsToShow.forEach { (type, interests) ->
                 SectionHeader(title = type.name)
                 Spacer(modifier = Modifier.height(8.dp))
                 InterestChipRow(
                     interests = interests,
-                    followedIds = followedIds,
-                    onToggle = viewModel::toggle
+                    followedIds = state.followedIds,
+                    onFollowToggle = viewModel::onFollowToggle
                 )
                 Spacer(modifier = Modifier.height(24.dp))
             }
@@ -146,6 +145,7 @@ fun InterestsScreen(
 @Composable
 private fun TypeFilterChips(
     currentFilter: InterestType?,
+    filterAllLabel: String,
     onFilterChange: (InterestType?) -> Unit
 ) {
     FlowRow(
@@ -156,7 +156,7 @@ private fun TypeFilterChips(
         FilterChip(
             selected = currentFilter == null,
             onClick = { onFilterChange(null) },
-            label = { Text("All") },
+            label = { Text(filterAllLabel) },
             colors = FilterChipDefaults.filterChipColors(
                 selectedContainerColor = Color(0xFF1C1B1F),
                 selectedLabelColor = Color.White,
@@ -195,7 +195,7 @@ private fun SectionHeader(title: String) {
 private fun InterestChipRow(
     interests: List<Interest>,
     followedIds: Set<String>,
-    onToggle: (String) -> Unit
+    onFollowToggle: (String) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -211,7 +211,7 @@ private fun InterestChipRow(
                     val isFollowed = interest.id in followedIds
                     FilterChip(
                         selected = isFollowed,
-                        onClick = { onToggle(interest.id) },
+                        onClick = { onFollowToggle(interest.id) },
                         label = { Text(interest.name) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFF6750A4),
