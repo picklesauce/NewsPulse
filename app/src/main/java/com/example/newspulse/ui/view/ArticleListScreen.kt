@@ -57,11 +57,7 @@ fun ArticleListScreen(
     navController: NavController,
     viewModel: FeedViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
-    val articles by viewModel.articles.collectAsState()
-    val searchQuery by viewModel.searchQuery.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
-    val selectedInterests = viewModel.selectedInterests
+    val state by viewModel.uiState.collectAsState()
     var isSearchExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -85,7 +81,7 @@ fun ArticleListScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "NewsPulse",
+                        text = state.headerTitle,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1C1B1F)
@@ -110,14 +106,14 @@ fun ArticleListScreen(
                 }
                 if (isSearchExpanded) {
                     OutlinedTextField(
-                        value = searchQuery,
+                        value = state.searchQuery,
                         onValueChange = { viewModel.onSearch(it) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         placeholder = {
                             Text(
-                                text = "Search articles...",
+                                text = state.searchPlaceholder,
                                 color = Color(0xFF79747E)
                             )
                         },
@@ -142,9 +138,9 @@ fun ArticleListScreen(
             }
         }
 
-        if (errorMessage != null) {
+        if (state.errorMessage != null) {
             Text(
-                text = errorMessage!!,
+                text = state.errorMessage!!,
                 modifier = Modifier.padding(16.dp),
                 color = Color(0xFFB3261E),
                 fontSize = 14.sp
@@ -158,7 +154,7 @@ fun ArticleListScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            selectedInterests.forEach { topic ->
+            state.selectedInterests.forEach { topic ->
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = Color(0xFFF5F5F5),
@@ -180,7 +176,7 @@ fun ArticleListScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
         ) {
-            if (isLoading) {
+            if (state.isLoading) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -189,7 +185,7 @@ fun ArticleListScreen(
                 ) {
                     CircularProgressIndicator(color = Color(0xFF6750A4))
                 }
-            } else if (articles.isEmpty()) {
+            } else if (state.articles.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -197,18 +193,16 @@ fun ArticleListScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = if (searchQuery.isNotBlank())
-                            "No articles match your search"
-                        else
-                            "No articles match your interests",
+                        text = state.emptyStateMessage ?: "",
                         color = Color(0xFF79747E),
                         fontSize = 16.sp
                     )
                 }
             } else {
-                articles.forEach { article ->
+                state.articles.forEach { article ->
                     ArticleCard(
                         article = article,
+                        imagePlaceholderText = state.imagePlaceholderText,
                         onClick = { navController.navigate("articleDetail/${article.id}") }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -222,6 +216,7 @@ fun ArticleListScreen(
 @Composable
 private fun ArticleCard(
     article: Article,
+    imagePlaceholderText: String,
     onClick: () -> Unit
 ) {
     Surface(
@@ -241,7 +236,7 @@ private fun ArticleCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "[IMAGE]",
+                    text = imagePlaceholderText,
                     color = Color(0xFF79747E),
                     fontSize = 14.sp
                 )
