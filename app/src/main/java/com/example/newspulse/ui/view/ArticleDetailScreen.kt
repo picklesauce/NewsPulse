@@ -1,5 +1,6 @@
 package com.example.newspulse.ui.view
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,14 +50,11 @@ fun ArticleDetailScreen(
     articleId: String? = null,
     articleDetailViewModel: ArticleDetailViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
-    val article = articleId?.let { articleDetailViewModel.getArticleById(it) }
-    val displayTitle = article?.title ?: "Article Not Found"
-    val source = article?.source ?: "Tech Daily"
-    val timeAgo = article?.hoursAgo ?: "2 hours ago"
-    val articleBody = generatePlaceholderBody()
+    val article by articleDetailViewModel.article.collectAsState()
+    val relatedArticles by articleDetailViewModel.relatedArticles.collectAsState()
 
     LaunchedEffect(articleId) {
-        article?.let { articleDetailViewModel.addToReadingHistory(it.id, it.title) }
+        articleId?.let { articleDetailViewModel.loadArticle(it) }
     }
 
     Column(
@@ -63,14 +63,16 @@ fun ArticleDetailScreen(
             .statusBarsPadding()
     ) {
         ArticleTopBar(
-            title = displayTitle,
-            source = source,
-            timeAgo = timeAgo,
+            title = article?.title ?: "Article Not Found",
+            source = article?.source ?: "—",
+            timeAgo = article?.hoursAgo ?: "—",
             onBackClick = { navController.popBackStack() }
         )
 
         ArticleContent(
-            body = articleBody
+            body = generatePlaceholderBody(),
+            relatedArticles = relatedArticles,
+            onRelatedArticleClick = { id -> navController.navigate("articleDetail/$id") }
         )
 
         article?.let { a ->
@@ -147,7 +149,9 @@ fun ArticleTopBar(
 
 @Composable
 fun ColumnScope.ArticleContent(
-    body: String
+    body: String,
+    relatedArticles: List<Article> = emptyList(),
+    onRelatedArticleClick: (String) -> Unit = {}
 ) {
     Surface(
         modifier = Modifier
@@ -168,6 +172,61 @@ fun ColumnScope.ArticleContent(
                 lineHeight = 24.sp,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
+            if (relatedArticles.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Related articles",
+                    color = Color(0xFF1C1B1F),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                relatedArticles.forEach { related ->
+                    RelatedArticleRow(
+                        article = related,
+                        onClick = { onRelatedArticleClick(related.id) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RelatedArticleRow(
+    article: Article,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFFF5F5F5)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = article.title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF1C1B1F),
+                    maxLines = 2
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${article.source} · ${article.hoursAgo}",
+                    fontSize = 12.sp,
+                    color = Color(0xFF79747E)
+                )
+            }
         }
     }
 }
