@@ -11,55 +11,75 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
+ * Single source of truth for the Interests screen.
+ * Interests list comes from ViewModel; follow toggle triggers ViewModel event ([onFollowToggle]).
+ */
+data class InterestsUiState(
+    /** Interests to show, grouped by type. Comes from ViewModel only. */
+    val interestsToShow: List<Pair<InterestType, List<Interest>>> = emptyList(),
+    val followedIds: Set<String> = emptySet(),
+    val typeFilter: InterestType? = null,
+    val headerTitle: String = "Interests",
+    val subtitle: String = "Follow or unfollow to personalize your feed. Changes apply immediately.",
+    val filterAllLabel: String = "All",
+    val showingFilterLabel: String = "Showing: %s"
+)
+
+/**
  * Manages interest lists and follow state.
- * - Shows interests grouped by [InterestType] (Country, Person, Company, Topic).
- * - Follow/unfollow updates the model immediately and reflected in [followedIds].
- * - Followed interests are used by the feed (FeedViewModel filters by them).
+ * - Interests list comes from [uiState.interestsToShow].
+ * - Follow toggle triggers [onFollowToggle] (ViewModel event).
  */
 class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
 
-    /** All interests from the catalog. */
-    val allInterests: List<Interest> get() = model.getAllInterests()
+    private val _followedIds = MutableStateFlow(model.getFollowedInterestIds())
+    private val _typeFilter = MutableStateFlow<InterestType?>(null)
 
-    /** Interests grouped by type for display. Order: Country, Person, Company, Topic. */
-    val interestsGroupedByType: List<Pair<InterestType, List<Interest>>> get() =
+    private val allInterests: List<Interest> get() = model.getAllInterests()
+
+    private val interestsGroupedByType: List<Pair<InterestType, List<Interest>>> get() =
         INTEREST_TYPE_ORDER.map { type ->
             type to allInterests.filterByType(type)
         }.filter { it.second.isNotEmpty() }
 
-    /** Currently followed interest IDs. Updates immediately when follow/unfollow is called. */
-    private val _followedIds = MutableStateFlow(model.getFollowedInterestIds())
-    val followedIds: StateFlow<Set<String>> = _followedIds.asStateFlow()
-
-    /** Optional filter: show only this type, or null for all. */
-    private val _typeFilter = MutableStateFlow<InterestType?>(null)
-    val typeFilter: StateFlow<InterestType?> = _typeFilter.asStateFlow()
-
-    /** Interests to show: either grouped (when no filter) or single group (when filter set). */
-    fun getInterestsToShow(): List<Pair<InterestType, List<Interest>>> =
+    private fun computeInterestsToShow(): List<Pair<InterestType, List<Interest>>> =
         _typeFilter.value?.let { type ->
             val list = allInterests.filterByType(type)
             if (list.isEmpty()) emptyList() else listOf(type to list)
         } ?: interestsGroupedByType
 
+    private fun buildUiState(): InterestsUiState = InterestsUiState(
+        interestsToShow = computeInterestsToShow(),
+        followedIds = _followedIds.value,
+        typeFilter = _typeFilter.value
+    )
+
+    private val _uiState = MutableStateFlow(buildUiState())
+    val uiState: StateFlow<InterestsUiState> = _uiState.asStateFlow()
+
+    private fun refreshUiState() {
+        _uiState.value = buildUiState()
+    }
+
+    init {
+        refreshUiState()
+    }
+
     fun setTypeFilter(type: InterestType?) {
         _typeFilter.value = type
+        refreshUiState()
     }
 
-    fun follow(id: String) {
-        model.followInterest(id)
-        _followedIds.update { it + id }
-    }
-
-    fun unfollow(id: String) {
-        model.unfollowInterest(id)
-        _followedIds.update { it - id }
-    }
-
-    fun isFollowed(id: String): Boolean = _followedIds.value.contains(id)
-
-    fun toggle(id: String) {
-        if (isFollowed(id)) unfollow(id) else follow(id)
+    /** ViewModel event: follow toggle. Call from the UI when user taps an interest chip. */
+    fun onFollowToggle(id: String) {
+        if (_followedIds.value.contains(id)) {
+            model.unfollowInterest(id)
+            _followedIds.update { it - id }
+        } else {
+            model.followInterest(id)
+            _followedIds.update { it + id }
+        }
+        refreshUiState()
     }
 
     private companion object {
