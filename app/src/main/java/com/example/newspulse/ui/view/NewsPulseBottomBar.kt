@@ -45,6 +45,7 @@ fun NewsPulseBottomBar(navController: NavController) {
                 currentRoute == item.route -> true
                 currentRoute?.startsWith("articleDetail") == true -> item.route == "home"
                 currentRoute == "filters" -> item.route == "explore"
+                currentRoute == "interests" -> item.route == "profile"
                 else -> false
             }
             NavigationBarItem(
@@ -52,11 +53,26 @@ fun NewsPulseBottomBar(navController: NavController) {
                 label = { Text(item.label) },
                 selected = selected,
                 onClick = {
-                    if (currentRoute != item.route) {
-                        navController.navigate(item.route) {
-                            popUpTo("home") { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                    if (currentRoute == item.route) return@NavigationBarItem
+                    when {
+                        currentRoute == "interests" && item.route == "home" -> {
+                            // From interests, go to home: pop interests and profile so home is on top
+                            navController.popBackStack("profile", inclusive = true)
+                            navController.navigate("home") { launchSingleTop = true }
+                        }
+                        currentRoute == "interests" && item.route != "home" -> {
+                            navController.popBackStack("profile", inclusive = true)
+                            navController.navigate(item.route) {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                        else -> {
+                            navController.navigate(item.route) {
+                                popUpTo("home") { saveState = true; inclusive = false }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 },
