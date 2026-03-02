@@ -17,9 +17,12 @@ class NewsPulseModel(
 ) {
     fun getFeed(): List<Article> = newsRepository.getArticles()
 
+    /**
+     * Returns a single article by its stable [articleId].
+     * Navigation and reading history are wired to use this ID, not the title.
+     */
     fun getArticle(articleId: String): Article? =
         newsRepository.getArticles().find { it.id == articleId }
-            ?: newsRepository.getArticles().find { it.title == articleId }
 
     fun getAllInterests(): List<Interest> =
         interestsCatalogRepository.getAllInterests()
