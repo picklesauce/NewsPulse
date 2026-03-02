@@ -34,6 +34,9 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        animationsDisabled = true
+    }
 }
 
 dependencies {
@@ -61,6 +64,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
