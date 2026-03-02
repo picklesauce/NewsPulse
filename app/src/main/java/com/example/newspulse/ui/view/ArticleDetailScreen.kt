@@ -39,6 +39,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.newspulse.domain.model.Article
+import com.example.newspulse.domain.util.estimateReadTime
 import com.example.newspulse.ui.CompositionLocals
 import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
@@ -71,6 +72,11 @@ fun ArticleDetailScreen(
 
         ArticleContent(
             body = generatePlaceholderBody(),
+            readTime = estimateReadTime(
+                (article?.title ?: "") + " " +
+                (article?.summary ?: "") + " " +
+                generatePlaceholderBody()
+            ),
             relatedArticles = relatedArticles,
             onRelatedArticleClick = { id -> navController.navigate("articleDetail/$id") }
         )
@@ -150,6 +156,7 @@ fun ArticleTopBar(
 @Composable
 fun ColumnScope.ArticleContent(
     body: String,
+    readTime: String = "",
     relatedArticles: List<Article> = emptyList(),
     onRelatedArticleClick: (String) -> Unit = {}
 ) {
@@ -165,6 +172,14 @@ fun ColumnScope.ArticleContent(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            if (readTime.isNotEmpty()) {
+                Text(
+                    text = readTime,
+                    color = Color(0xFF79747E),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
             Text(
                 text = body,
                 color = Color.Black,
@@ -222,7 +237,7 @@ private fun RelatedArticleRow(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${article.source} · ${article.hoursAgo}",
+                    text = "${article.source} · ${article.readTime} · ${article.hoursAgo}",
                     fontSize = 12.sp,
                     color = Color(0xFF79747E)
                 )

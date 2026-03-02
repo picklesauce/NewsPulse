@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val startDestination = remember {
-                        if (model.isOnboardingComplete()) "login" else "topicSelection"
+                        if (model.isOnboardingComplete()) "home" else "login"
                     }
 
                     NavHost(

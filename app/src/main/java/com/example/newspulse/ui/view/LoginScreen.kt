@@ -105,7 +105,9 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         viewModel.saveLogin()
-                        navController.navigate("home")
+                        navController.navigate("topicSelection") {
+                            popUpTo("login") { inclusive = true }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.example.newspulse.domain.model
 
+import com.example.newspulse.domain.util.estimateReadTime
 import com.example.newspulse.domain.util.toHoursAgo
 
 data class Article(
@@ -30,4 +31,6 @@ data class Article(
     val hoursAgo: String get() = publishedAt.toHoursAgo()
     val snippet: String get() = summary
     val topics: List<String> get() = interests.map { it.name }
+    /** Estimated read time from title + summary (used on article cards). */
+    val readTime: String get() = estimateReadTime("$title $summary")
 }
