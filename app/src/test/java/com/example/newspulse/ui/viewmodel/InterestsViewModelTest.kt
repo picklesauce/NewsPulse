@@ -84,6 +84,51 @@ class InterestsViewModelTest {
         assertEquals("Showing: %s", state.showingFilterLabel)
     }
 
+    // ========== Ticket: follow/unfollow changes followed set ==========
+
+    /**
+     * Test Target: follow/unfollow changes followed set
+     * Acceptance: Uses MockInterestsRepository, deterministic.
+     *
+     * Arrange: Get interest IDs from MockDB catalog
+     * Act: Follow then unfollow; verify followed set changes
+     * Assert: followedIds reflects each change correctly
+     */
+    @Test
+    fun followUnfollow_changesFollowedSet() {
+        // Arrange
+        val techInterest = model.getAllInterests().find { it.name == "Technology" }
+        val businessInterest = model.getAllInterests().find { it.name == "Business" }
+        assertTrue(techInterest != null)
+        assertTrue(businessInterest != null)
+        val techId = techInterest!!.id
+        val businessId = businessInterest!!.id
+
+        // Act: Follow Technology
+        viewModel.onFollowToggle(techId)
+
+        // Assert: followed set contains Technology
+        assertEquals(setOf(techId), viewModel.uiState.value.followedIds)
+
+        // Act: Follow Business
+        viewModel.onFollowToggle(businessId)
+
+        // Assert: followed set contains both
+        assertEquals(setOf(techId, businessId), viewModel.uiState.value.followedIds)
+
+        // Act: Unfollow Technology
+        viewModel.onFollowToggle(techId)
+
+        // Assert: followed set contains only Business
+        assertEquals(setOf(businessId), viewModel.uiState.value.followedIds)
+
+        // Act: Unfollow Business
+        viewModel.onFollowToggle(businessId)
+
+        // Assert: followed set is empty
+        assertTrue(viewModel.uiState.value.followedIds.isEmpty())
+    }
+
     // ========== Follow Interest Tests ==========
 
     /**

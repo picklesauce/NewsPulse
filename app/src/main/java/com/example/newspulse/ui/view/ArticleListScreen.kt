@@ -258,11 +258,18 @@ private fun ArticleCard(
                         fontSize = 12.sp,
                         color = Color(0xFF79747E)
                     )
-                    Text(
-                        text = article.hoursAgo,
-                        fontSize = 12.sp,
-                        color = Color(0xFF79747E)
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = article.readTime,
+                            fontSize = 12.sp,
+                            color = Color(0xFF79747E)
+                        )
+                        Text(
+                            text = article.hoursAgo,
+                            fontSize = 12.sp,
+                            color = Color(0xFF79747E)
+                        )
+                    }
                 }
                 if (article.snippet.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))

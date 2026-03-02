@@ -137,6 +137,16 @@ fun SavedArticlesScreen(
                                     fontSize = 12.sp
                                 )
                                 Text(
+                                    text = article.readTime,
+                                    color = Color(0xFF666666),
+                                    fontSize = 12.sp
+                                )
+                                Text(
+                                    text = " • ",
+                                    color = Color(0xFF666666),
+                                    fontSize = 12.sp
+                                )
+                                Text(
                                     text = article.hoursAgo,
                                     color = Color(0xFF666666),
                                     fontSize = 12.sp

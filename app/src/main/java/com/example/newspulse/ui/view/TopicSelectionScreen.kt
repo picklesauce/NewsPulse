@@ -131,7 +131,7 @@ fun TopicSelectionScreen(
         Button(
             onClick = {
                 viewModel.saveAndContinue()
-                navController.navigate("login") {
+                navController.navigate("home") {
                     popUpTo("topicSelection") { inclusive = true }
                 }
             },

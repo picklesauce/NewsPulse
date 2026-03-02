@@ -3,6 +3,7 @@ package com.example.newspulse.ui.viewmodel
 import com.example.newspulse.data.mock.FakeReadingHistoryRepository
 import com.example.newspulse.data.mock.FakeUserPreferencesRepository
 import com.example.newspulse.data.mock.InMemorySavedArticlesRepository
+import com.example.newspulse.data.mock.MockDB
 import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
@@ -18,10 +19,15 @@ import org.junit.Test
  * Unit tests for FeedViewModel.
  * Tests that the ViewModel correctly loads articles into state and updates state
  * based on user actions (search, unfollow interest, refresh).
- * 
- * Test Target (per ticket S2-17):
- * - FeedViewModel loads articles into state
- * 
+ *
+ * Test Targets (per ticket):
+ * - loads fake data correctly
+ * - feed retrieval returns expected size/order
+ *
+ * Acceptance Criteria:
+ * - Uses mock repositories / MockDB
+ * - Deterministic results
+ *
  * Note: These are pure unit tests with no Android instrumentation.
  * StateFlow updates are synchronous, so no test dispatchers are needed.
  */
@@ -45,6 +51,59 @@ class FeedViewModelTest {
             savedArticlesRepository = InMemorySavedArticlesRepository()
         )
         viewModel = FeedViewModel(model)
+    }
+
+    // ========== Ticket: loads fake data correctly ==========
+
+    /**
+     * Test Target: loads fake data correctly
+     * Acceptance: Uses mock repositories (MockNewsRepository -> MockDB), deterministic results.
+     *
+     * Arrange: NewsPulseModel with MockNewsRepository (reads from MockDB)
+     * Act: FeedViewModel initializes, refreshArticles() runs in init
+     * Assert: Articles loaded match MockDB.articles (exact count, IDs, first title)
+     */
+    @Test
+    fun loadsFakeDataCorrectly_fromMockRepository() {
+        // Arrange: setUp() already creates model with MockNewsRepository
+        val expectedArticles = MockDB.articles
+        val expectedCount = expectedArticles.size
+        val expectedFirstId = expectedArticles.first().id
+        val expectedFirstTitle = expectedArticles.first().title
+
+        // Act: ViewModel initialized in setUp(), init block calls refreshArticles()
+        val state = viewModel.uiState.value
+
+        // Assert: Deterministic - exact data from MockDB
+        assertEquals(expectedCount, state.articles.size)
+        assertEquals(expectedFirstId, state.articles.first().id)
+        assertEquals(expectedFirstTitle, state.articles.first().title)
+        assertEquals(expectedArticles.map { it.id }, state.articles.map { it.id })
+    }
+
+    // ========== Ticket: feed retrieval returns expected size/order ==========
+
+    /**
+     * Test Target: feed retrieval returns expected size/order
+     * Acceptance: Uses MockDB, deterministic results.
+     *
+     * Arrange: Model with MockNewsRepository
+     * Act: getFeed() via ViewModel init (no interests = show all)
+     * Assert: Size = 20, order = art-1, art-2, ..., art-20
+     */
+    @Test
+    fun feedRetrieval_returnsExpectedSizeAndOrder() {
+        // Arrange: MockDB has exactly 20 articles in fixed order
+        val expectedSize = 20
+        val expectedOrder = (1..20).map { "art-$it" }
+
+        // Act: ViewModel loads feed (no interests followed = all articles)
+        val state = viewModel.uiState.value
+        val actualIds = state.articles.map { it.id }
+
+        // Assert: Deterministic size and order
+        assertEquals(expectedSize, state.articles.size)
+        assertEquals(expectedOrder, actualIds)
     }
 
     // ========== Initial State Tests ==========

@@ -137,7 +137,10 @@ fun FiltersScreen(
                 Button(
                     onClick = {
                         viewModel.apply()
-                        navController.popBackStack()
+                        navController.navigate("home") {
+                            popUpTo("home") { inclusive = false }
+                            launchSingleTop = true
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
