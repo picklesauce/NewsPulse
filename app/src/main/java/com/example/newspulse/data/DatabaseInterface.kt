@@ -2,9 +2,9 @@ package com.example.newspulse.data
 
 import java.time.Instant
 import java.util.UUID
-import com.example.newspulse.model.Article
-import com.example.newspulse.model.Interest
-import com.example.newspulse.model.UserProfile
+import com.example.newspulse.domain.model.Article
+import com.example.newspulse.domain.model.Interest
+import com.example.newspulse.domain.model.UserProfile
 
 interface DatabaseInterface {
 
