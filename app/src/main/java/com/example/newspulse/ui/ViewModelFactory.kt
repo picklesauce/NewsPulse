@@ -11,6 +11,7 @@ import com.example.newspulse.ui.viewmodel.InterestsViewModel
 import com.example.newspulse.ui.viewmodel.LoginViewModel
 import com.example.newspulse.ui.viewmodel.ProfileViewModel
 import com.example.newspulse.ui.viewmodel.SavedArticlesViewModel
+import com.example.newspulse.ui.viewmodel.SignUpViewModel
 import com.example.newspulse.ui.viewmodel.TopicSelectionViewModel
 
 class ViewModelFactory(private val model: NewsPulseModel) : ViewModelProvider.Factory {
@@ -26,6 +27,7 @@ class ViewModelFactory(private val model: NewsPulseModel) : ViewModelProvider.Fa
             modelClass.isAssignableFrom(FiltersViewModel::class.java) -> FiltersViewModel(model) as T
             modelClass.isAssignableFrom(InterestsViewModel::class.java) -> InterestsViewModel(model) as T
             modelClass.isAssignableFrom(SavedArticlesViewModel::class.java) -> SavedArticlesViewModel(model) as T
+            modelClass.isAssignableFrom(SignUpViewModel::class.java) -> SignUpViewModel(model) as T
             else -> throw IllegalArgumentException("Unknown ViewModel: ${modelClass.name}")
         }
     }
