@@ -30,7 +30,7 @@ fun NewsPulseBottomBar(navController: NavController) {
 
     val items = listOf(
         BottomNavItem("home", "Home", Icons.Default.Home),
-        BottomNavItem("explore", "Explore", Icons.Default.Explore),
+        BottomNavItem("explore", "Discover", Icons.Default.Explore),
         BottomNavItem("saved", "Saved", Icons.Default.Bookmark),
         BottomNavItem("profile", "Profile", Icons.Default.Person)
     )
