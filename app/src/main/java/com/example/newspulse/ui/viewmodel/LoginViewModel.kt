@@ -35,11 +35,15 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
                 _uiState.update { it.copy(errorMessage = "Please enter your password") }
                 false
             }
-            !model.validateLogin(s.email.trim(), s.password) -> {
-                _uiState.update { it.copy(errorMessage = "Invalid email or password") }
-                false
+            else -> {
+                val result = model.logIn(s.email.trim(), s.password)
+                if (!result.success) {
+                    _uiState.update { it.copy(errorMessage = result.errorMessage ?: "Invalid email or password") }
+                    false
+                } else {
+                    true
+                }
             }
-            else -> true
             }
     }
 

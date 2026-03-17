@@ -50,10 +50,15 @@ class SignUpViewModel(private val model: NewsPulseModel) : ViewModel() {
                 false
             }
             else -> {
-                model.setUsername(s.username)
-                model.setStoredCredentials(s.email, s.password)
-                model.setMemberSinceIfFirstTime()
-                true
+                val result = model.signUp(s.email.trim(), s.password)
+                if (!result.success) {
+                    _uiState.update { it.copy(errorMessage = result.errorMessage ?: "Sign up failed") }
+                    false
+                } else {
+                    model.setUsername(s.username)
+                    model.setMemberSinceIfFirstTime()
+                    true
+                }
             }
         }
     }

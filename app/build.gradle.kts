@@ -10,6 +10,8 @@ val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use { load(it) }
 }
 val newsApiKey: String = localProperties.getProperty("NEWSAPI_AI_KEY", "fa9bfdc7-22d1-40cf-806a-bd2380a1ad66")
+val supabaseUrl: String = localProperties.getProperty("SUPABASE_URL", "")
+val supabaseAnonKey: String = localProperties.getProperty("SUPABASE_ANON_KEY", "")
 
 android {
     namespace = "com.example.newspulse"
@@ -25,6 +27,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "NEWSAPI_AI_KEY", "\"$newsApiKey\"")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
     }
     buildTypes {
         release {
