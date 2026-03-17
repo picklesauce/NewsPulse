@@ -27,9 +27,20 @@ class UserPreferences(context: Context) : UserPreferencesRepository {
         }
     }
 
+    override fun getStoredEmail(): String = prefs.getString(KEY_STORED_EMAIL, "") ?: ""
+    override fun getStoredPassword(): String = prefs.getString(KEY_STORED_PASSWORD, "") ?: ""
+    override fun setStoredCredentials(email: String, password: String) {
+        prefs.edit()
+            .putString(KEY_STORED_EMAIL, email)
+            .putString(KEY_STORED_PASSWORD, password)
+            .apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "user"
         private const val KEY_USERNAME = "username"
         private const val KEY_MEMBER_SINCE = "member_since"
+        private const val KEY_STORED_EMAIL = "stored_email"
+        private const val KEY_STORED_PASSWORD = "stored_password"
     }
 }

@@ -1,6 +1,7 @@
 package com.example.newspulse.ui.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,14 +37,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -267,18 +265,28 @@ fun SignUpScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    Text(
-                        text = buildAnnotatedString {
-                            append("Already have an account? ")
-                            withStyle(SpanStyle(color = SignUpLinkBlue, fontWeight = FontWeight.SemiBold)) {
-                                append("Log In")
-                            }
-                        },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
-                        color = SignUpLabel
-                    )
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Already have an account? ",
+                            fontSize = 14.sp,
+                            color = SignUpLabel
+                        )
+                        Text(
+                            text = "Log In",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SignUpLinkBlue,
+                            modifier = Modifier.clickable {
+                                navController.navigate("login") {
+                                    popUpTo("signup") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
                 }
             }
 

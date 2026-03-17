@@ -23,7 +23,7 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun updatePassword(value: String) = _uiState.update { it.copy(password = value, errorMessage = null) }
     fun togglePasswordVisible() = _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
 
-    /** Returns true if the credentials are valid (mock: any non-empty email+password). */
+    /** Returns true if the credentials match a registered account (from sign up). */
     fun logIn(): Boolean {
         val s = _uiState.value
         return when {
@@ -35,11 +35,13 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
                 _uiState.update { it.copy(errorMessage = "Please enter your password") }
                 false
             }
+            !model.validateLogin(s.email.trim(), s.password) -> {
+                _uiState.update { it.copy(errorMessage = "Invalid email or password") }
+                false
+            }
             else -> true
-        }
+            }
     }
 
-    // Kept for backward compat with existing callers
-    fun updateUsername(username: String) = Unit
-    fun saveLogin() = Unit
+    fun isOnboardingComplete(): Boolean = model.isOnboardingComplete()
 }
