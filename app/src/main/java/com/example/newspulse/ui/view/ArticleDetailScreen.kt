@@ -34,9 +34,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -78,6 +81,7 @@ fun ArticleDetailScreen(
 
         ArticleContent(
             body = generatePlaceholderBody(),
+            imageUrl = article?.imageUrl ?: "",
             readTime = estimateReadTime(
                 (article?.title ?: "") + " " +
                 (article?.summary ?: "") + " " +
@@ -172,6 +176,7 @@ fun ArticleTopBar(
 @Composable
 fun ColumnScope.ArticleContent(
     body: String,
+    imageUrl: String = "",
     readTime: String = "",
     relatedArticles: List<Article> = emptyList(),
     onRelatedArticleClick: (String) -> Unit = {}
@@ -188,6 +193,18 @@ fun ColumnScope.ArticleContent(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            if (imageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             if (readTime.isNotEmpty()) {
                 Text(
                     text = readTime,

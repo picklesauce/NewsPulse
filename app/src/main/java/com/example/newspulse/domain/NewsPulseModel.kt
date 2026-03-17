@@ -17,6 +17,11 @@ class NewsPulseModel(
 ) {
     fun getFeed(): List<Article> = newsRepository.getArticles()
 
+    /** Fetches latest articles from the API; no-op if using mock repository. */
+    suspend fun refreshNews() {
+        newsRepository.refresh()
+    }
+
     /**
      * Returns a single article by its stable [articleId].
      * Navigation and reading history are wired to use this ID, not the title.

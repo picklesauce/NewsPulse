@@ -44,7 +44,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.SubcomposeAsyncImage
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -329,14 +332,57 @@ internal fun ArticleCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(160.dp)
-                    .background(Color(0xFFE7E0EC)),
-                contentAlignment = Alignment.Center
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
             ) {
-                Text(
-                    text = imagePlaceholderText,
-                    color = Color(0xFF79747E),
-                    fontSize = 14.sp
-                )
+                if (article.imageUrl.isNotBlank()) {
+                    SubcomposeAsyncImage(
+                        model = article.imageUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        loading = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color(0xFFE7E0EC)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = imagePlaceholderText,
+                                    color = Color(0xFF79747E),
+                                    fontSize = 14.sp
+                                )
+                            }
+                        },
+                        error = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color(0xFFE7E0EC)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = imagePlaceholderText,
+                                    color = Color(0xFF79747E),
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFE7E0EC)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = imagePlaceholderText,
+                            color = Color(0xFF79747E),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(

@@ -1,12 +1,14 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.Article
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Single source of truth for the Feed (ArticleList) screen.
@@ -34,15 +36,26 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
     init {
+        // Load from cache first, then fetch from API if available (no-op for mock)
         refreshArticles()
+        viewModelScope.launch {
+            model.refreshNews()
+            refreshArticles()
+        }
     }
 
     fun onRefresh() {
         _uiState.update {
             it.copy(isLoading = true, errorMessage = null)
         }
-        refreshArticles()
-        _uiState.update { it.copy(isLoading = false) }
+        viewModelScope.launch {
+            try {
+                model.refreshNews()
+            } finally {
+                refreshArticles()
+                _uiState.update { it.copy(isLoading = false) }
+            }
+        }
     }
 
     fun onSearch(query: String) {
