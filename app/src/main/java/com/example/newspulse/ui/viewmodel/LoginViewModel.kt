@@ -2,29 +2,44 @@ package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.newspulse.domain.NewsPulseModel
-import com.example.newspulse.domain.model.LoginState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+data class LoginUiState(
+    val email: String = "",
+    val password: String = "",
+    val passwordVisible: Boolean = false,
+    val errorMessage: String? = null
+)
 
 class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
-    private val _uiState = MutableStateFlow(LoginState())
-    val uiState: StateFlow<LoginState> = _uiState.asStateFlow()
 
-    init {
-        _uiState.value = _uiState.value.copy(username = model.getUsername())
+    private val _uiState = MutableStateFlow(LoginUiState())
+    val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+
+    fun updateEmail(value: String) = _uiState.update { it.copy(email = value, errorMessage = null) }
+    fun updatePassword(value: String) = _uiState.update { it.copy(password = value, errorMessage = null) }
+    fun togglePasswordVisible() = _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
+
+    /** Returns true if the credentials are valid (mock: any non-empty email+password). */
+    fun logIn(): Boolean {
+        val s = _uiState.value
+        return when {
+            s.email.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Please enter your email address") }
+                false
+            }
+            s.password.isBlank() -> {
+                _uiState.update { it.copy(errorMessage = "Please enter your password") }
+                false
+            }
+            else -> true
+        }
     }
 
-    fun updateUsername(username: String) {
-        _uiState.value = _uiState.value.copy(username = username)
-    }
-
-    fun updateEmail(email: String) {
-        _uiState.value = _uiState.value.copy(email = email)
-    }
-
-    fun saveLogin() {
-        model.setUsername(_uiState.value.username)
-        model.setMemberSinceIfFirstTime()
-    }
+    // Kept for backward compat with existing callers
+    fun updateUsername(username: String) = Unit
+    fun saveLogin() = Unit
 }

@@ -28,6 +28,7 @@ import com.example.newspulse.ui.view.LoginScreen
 import com.example.newspulse.ui.view.NewsPulseScaffold
 import com.example.newspulse.ui.view.ProfileScreen
 import com.example.newspulse.ui.view.SavedArticlesScreen
+import com.example.newspulse.ui.view.SignUpScreen
 import com.example.newspulse.ui.view.TopicSelectionScreen
 
 class MainActivity : ComponentActivity() {
@@ -52,18 +53,25 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val startDestination = remember {
-                        if (model.isOnboardingComplete()) "home" else "login"
+                        when {
+                            model.isOnboardingComplete() -> "home"
+                            model.getUsername().isNotEmpty() -> "login"
+                            else -> "signup"
+                        }
                     }
 
                     NavHost(
                         navController = navController,
                         startDestination = startDestination
                     ) {
-                        composable("topicSelection") {
-                            TopicSelectionScreen(navController = navController)
+                        composable("signup") {
+                            SignUpScreen(navController = navController)
                         }
                         composable("login") {
                             LoginScreen(navController = navController)
+                        }
+                        composable("topicSelection") {
+                            TopicSelectionScreen(navController = navController)
                         }
                         composable("home") {
                             NewsPulseScaffold(navController = navController) {
