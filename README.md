@@ -1,5 +1,17 @@
 # Team-101-17
 
+## NewsAPI.ai (Event Registry) setup
+
+To load real articles from NewsAPI.ai:
+
+1. Copy `local.properties.example` to `local.properties` (if you don’t have one).
+2. In `local.properties`, set your API key:  
+   `NEWSAPI_AI_KEY=your_key_here`  
+   Get a key at [newsapi.ai](https://newsapi.ai/).
+3. Do **not** commit `local.properties` or your real key (it’s gitignored).
+
+Without a key, the app uses built-in mock articles and the default topic list.
+
 ## Architecture
 
 The app uses a layered architecture:
