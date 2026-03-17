@@ -5,6 +5,9 @@ import com.example.newspulse.data.remote.SupabaseUserSession
 import com.example.newspulse.domain.AuthRepository
 import com.example.newspulse.domain.AuthResult
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -62,6 +65,7 @@ class SupabaseAuthRepository(
             }
             session.userId = userId
             session.accessToken = null
+            ensureUserProfile(userId, normalizedEmail)
             AuthResult(true)
         }
     }
@@ -91,6 +95,7 @@ class SupabaseAuthRepository(
             if (userId.isBlank()) return@runOnIo AuthResult(false, "Invalid account record")
             session.userId = userId
             session.accessToken = null
+            ensureUserProfile(userId, normalizedEmail)
             AuthResult(true)
         }
     }
@@ -104,4 +109,21 @@ class SupabaseAuthRepository(
     private fun runOnIo(block: () -> AuthResult): AuthResult =
         runCatching { ioExecutor.submit(Callable { block() }).get() }
             .getOrElse { AuthResult(false, it.message ?: "Unknown network error") }
+
+    private fun ensureUserProfile(userId: String, email: String) {
+        val username = email.substringBefore("@").ifBlank { "user_${userId.take(8)}" }
+        val memberSince = SimpleDateFormat("MMM yyyy", Locale.US).format(Date())
+        val body = JSONObject()
+            .put("user_id", userId)
+            .put("username", username)
+            .put("member_since", memberSince)
+            .put("onboarding_complete", false)
+        client.insert(
+            table = "user_profiles",
+            body = body,
+            onConflict = "user_id",
+            upsert = true,
+            useUserAuth = false
+        )
+    }
 }
