@@ -290,6 +290,53 @@ class FeedViewModelTest {
         assertTrue(state.articles.size <= initialCount)
     }
 
+    // ========== Topic Filter Dropdown Tests ==========
+
+    /**
+     * Tests that toggling a topic filter restricts articles to that topic only.
+     */
+    @Test
+    fun onToggleTopicFilter_filtersArticlesByTopic() {
+        val techInterest = model.getAllInterests().find { it.name == "Technology" }
+        val businessInterest = model.getAllInterests().find { it.name == "Business" }
+        techInterest?.let { model.followInterest(it.id) }
+        businessInterest?.let { model.followInterest(it.id) }
+        val newViewModel = FeedViewModel(model)
+        val allCount = newViewModel.uiState.value.articles.size
+        assertTrue(allCount > 0)
+
+        // Act: Toggle Technology filter on
+        newViewModel.onToggleTopicFilter("Technology")
+
+        // Assert: Only Technology articles shown
+        val state = newViewModel.uiState.value
+        assertTrue(state.activeTopicFilters.contains("Technology"))
+        state.articles.forEach { article ->
+            assertTrue(article.interests.any { it.name == "Technology" })
+        }
+        assertTrue(state.articles.size <= allCount)
+    }
+
+    /**
+     * Tests that clearing all topic filters (All topics) shows all matching articles again.
+     */
+    @Test
+    fun onClearTopicFilters_showsAllTopics() {
+        val techInterest = model.getAllInterests().find { it.name == "Technology" }
+        techInterest?.let { model.followInterest(it.id) }
+        val newViewModel = FeedViewModel(model)
+        newViewModel.onToggleTopicFilter("Technology")
+        val filteredCount = newViewModel.uiState.value.articles.size
+
+        // Act: Clear all filters
+        newViewModel.onClearTopicFilters()
+
+        // Assert: All matching articles shown again
+        val state = newViewModel.uiState.value
+        assertTrue(state.activeTopicFilters.isEmpty())
+        assertTrue(state.articles.size >= filteredCount)
+    }
+
     // ========== Empty State Tests ==========
 
     /**
@@ -339,6 +386,74 @@ class FeedViewModelTest {
         val state = newViewModel.uiState.value
         assertEquals("No articles match your search", state.emptyStateMessage)
         assertTrue(state.articles.isEmpty())
+    }
+
+    // ========== Topic Filter Dropdown Tests (S3-21) ==========
+
+    /**
+     * Tests that toggling multiple topic filters shows articles matching any active filter.
+     */
+    @Test
+    fun onToggleTopicFilter_multiSelectShowsMatchingArticles() {
+        val techInterest = model.getAllInterests().find { it.name == "Technology" }
+        val businessInterest = model.getAllInterests().find { it.name == "Business" }
+        techInterest?.let { model.followInterest(it.id) }
+        businessInterest?.let { model.followInterest(it.id) }
+        val newViewModel = FeedViewModel(model)
+        val allCount = newViewModel.uiState.value.articles.size
+        assertTrue(allCount > 0)
+
+        // Act: Toggle Technology on
+        newViewModel.onToggleTopicFilter("Technology")
+
+        val state = newViewModel.uiState.value
+        assertTrue(state.activeTopicFilters.contains("Technology"))
+        assertTrue(state.articles.size <= allCount)
+        state.articles.forEach { article ->
+            assertTrue(article.interests.any { it.name == "Technology" })
+        }
+    }
+
+    /**
+     * Tests that toggling a filter off removes it and updates the feed.
+     */
+    @Test
+    fun onToggleTopicFilter_toggleOffRestoresFilter() {
+        val techInterest = model.getAllInterests().find { it.name == "Technology" }
+        techInterest?.let { model.followInterest(it.id) }
+        val newViewModel = FeedViewModel(model)
+        newViewModel.onToggleTopicFilter("Technology")
+        val filteredCount = newViewModel.uiState.value.articles.size
+
+        // Act: Toggle Technology off
+        newViewModel.onToggleTopicFilter("Technology")
+
+        val state = newViewModel.uiState.value
+        assertFalse(state.activeTopicFilters.contains("Technology"))
+        assertTrue(state.articles.size >= filteredCount)
+    }
+
+    /**
+     * Tests that clearing filters ("All topics") shows all articles matching interests.
+     */
+    @Test
+    fun onClearTopicFilters_showsAllMatchingArticles() {
+        val techInterest = model.getAllInterests().find { it.name == "Technology" }
+        val businessInterest = model.getAllInterests().find { it.name == "Business" }
+        techInterest?.let { model.followInterest(it.id) }
+        businessInterest?.let { model.followInterest(it.id) }
+        val newViewModel = FeedViewModel(model)
+        val allCount = newViewModel.uiState.value.articles.size
+        newViewModel.onToggleTopicFilter("Technology")
+        val filteredCount = newViewModel.uiState.value.articles.size
+
+        // Act: Clear all filters
+        newViewModel.onClearTopicFilters()
+
+        val state = newViewModel.uiState.value
+        assertTrue(state.activeTopicFilters.isEmpty())
+        assertEquals(allCount, state.articles.size)
+        assertTrue(state.articles.size >= filteredCount)
     }
 
     /**

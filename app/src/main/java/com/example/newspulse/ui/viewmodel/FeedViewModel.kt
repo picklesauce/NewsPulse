@@ -18,6 +18,8 @@ data class FeedUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val selectedInterests: Set<String> = emptySet(),
+    /** Active topic filters; empty set = "All topics" (no filter applied). */
+    val activeTopicFilters: Set<String> = emptySet(),
     /** Shown when articles list is empty; null when there are articles. */
     val emptyStateMessage: String? = null,
     val headerTitle: String = "NewsPulse",
@@ -54,9 +56,25 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
         refreshArticles()
     }
 
+    fun onToggleTopicFilter(topic: String) {
+        val current = _uiState.value.activeTopicFilters
+        val updated = if (topic in current) current - topic else current + topic
+        _uiState.update { it.copy(activeTopicFilters = updated) }
+        refreshArticles()
+    }
+
+    fun onClearTopicFilters() {
+        _uiState.update { it.copy(activeTopicFilters = emptySet()) }
+        refreshArticles()
+    }
+
     private fun refreshArticles() {
         val interests = model.getFollowedInterestNames()
-        val base = model.getFeed().filter { it.matchesInterests(interests) }
+        var base = model.getFeed().filter { it.matchesInterests(interests) }
+        val activeFilters = _uiState.value.activeTopicFilters
+        if (activeFilters.isNotEmpty()) {
+            base = base.filter { article -> article.topics.any { it in activeFilters } }
+        }
         val query = _uiState.value.searchQuery
         val articles = if (query.isBlank()) {
             base
@@ -66,6 +84,7 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
         val emptyMessage = when {
             articles.isNotEmpty() -> null
             query.isNotBlank() -> "No articles match your search"
+            activeFilters.isNotEmpty() -> "No articles for the selected topics"
             else -> "No articles match your interests"
         }
         _uiState.update {

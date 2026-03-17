@@ -19,9 +19,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -59,6 +64,7 @@ fun ArticleListScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var isSearchExpanded by remember { mutableStateOf(false) }
+    var filterExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.onRefresh()
@@ -145,6 +151,89 @@ fun ArticleListScreen(
                 color = Color(0xFFB3261E),
                 fontSize = 14.sp
             )
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            val filterLabel = if (state.activeTopicFilters.isEmpty()) {
+                "All topics"
+            } else {
+                state.activeTopicFilters.sorted().joinToString(", ")
+            }
+
+            OutlinedTextField(
+                value = filterLabel,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Filter by topic"
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = Color(0xFFE7E0EC),
+                    unfocusedTrailingIconColor = Color(0xFF79747E),
+                    cursorColor = Color(0xFF6750A4),
+                    focusedBorderColor = Color(0xFF6750A4),
+                    focusedTrailingIconColor = Color(0xFF6750A4),
+                    disabledBorderColor = Color(0xFFE7E0EC),
+                    disabledTextColor = Color(0xFF1C1B1F),
+                    disabledTrailingIconColor = Color(0xFF79747E)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                enabled = false
+            )
+            // Transparent overlay to capture click — required because OutlinedTextField
+            // consumes touch events internally and ignores .clickable on itself
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { filterExpanded = true }
+            )
+            DropdownMenu(
+                expanded = filterExpanded,
+                onDismissRequest = { filterExpanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Checkbox(
+                                checked = state.activeTopicFilters.isEmpty(),
+                                onCheckedChange = null
+                            )
+                            Text("All topics", fontWeight = FontWeight.Medium)
+                        }
+                    },
+                    onClick = { viewModel.onClearTopicFilters() }
+                )
+                HorizontalDivider()
+                state.selectedInterests.sorted().forEach { topic ->
+                    val isChecked = topic in state.activeTopicFilters
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Checkbox(
+                                    checked = isChecked,
+                                    onCheckedChange = null
+                                )
+                                Text(topic)
+                            }
+                        },
+                        onClick = { viewModel.onToggleTopicFilter(topic) }
+                    )
+                }
+            }
         }
 
         Row(
