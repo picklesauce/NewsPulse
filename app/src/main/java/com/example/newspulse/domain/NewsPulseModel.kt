@@ -13,7 +13,8 @@ class NewsPulseModel(
     private val interestsCatalogRepository: InterestsCatalogRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val readingHistoryRepository: ReadingHistoryRepository,
-    private val savedArticlesRepository: SavedArticlesRepository
+    private val savedArticlesRepository: SavedArticlesRepository,
+    private val authRepository: AuthRepository? = null
 ) {
     fun getFeed(): List<Article> = newsRepository.getArticles()
 
@@ -63,13 +64,18 @@ class NewsPulseModel(
         userPreferencesRepository.setUsername(username)
     }
 
-    /** Returns true if the given email and password match the stored credentials (from sign up). */
-    fun validateLogin(email: String, password: String): Boolean {
-        val storedEmail = userPreferencesRepository.getStoredEmail()
-        if (storedEmail.isBlank()) return false
-        return userPreferencesRepository.getStoredEmail() == email &&
-            userPreferencesRepository.getStoredPassword() == password
-    }
+    fun logIn(email: String, password: String): AuthResult =
+        authRepository?.signIn(email, password) ?: run {
+            val ok = userPreferencesRepository.getStoredEmail() == email &&
+                userPreferencesRepository.getStoredPassword() == password
+            if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
+        }
+
+    fun signUp(email: String, password: String): AuthResult =
+        authRepository?.signUp(email, password) ?: run {
+            userPreferencesRepository.setStoredCredentials(email, password)
+            AuthResult(true)
+        }
 
     fun setStoredCredentials(email: String, password: String) {
         userPreferencesRepository.setStoredCredentials(email, password)

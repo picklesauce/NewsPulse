@@ -4,7 +4,8 @@ This document describes the database schema for the NewsPulse application. The s
 
 ## Overview
 
-The database consists of 7 main tables:
+The database consists of 8 main tables:
+- **app_users** - Simple application-managed login credentials (email/password)
 - **interests** - Catalog of available interests (Countries, People, Companies, Topics)
 - **articles** - News articles and content
 - **article_interests** - Many-to-many relationship between articles and interests
@@ -38,6 +39,11 @@ The database consists of 7 main tables:
                           │
                  ┌────────▼─────────┐
                  │ saved_articles   │
+                 └────────┬─────────┘
+                          │
+                          │
+                 ┌────────▼─────────┐
+                 │    app_users     │
                  └──────────────────┘
 ```
 
@@ -110,13 +116,32 @@ Junction table for the many-to-many relationship between articles and interests.
 
 ---
 
-### 4. `user_profiles`
+### 4. `app_users`
+
+Simple application-managed account table used for login credentials.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | UUID | PRIMARY KEY | Stable user identifier used by app data tables |
+| `email` | TEXT | NOT NULL, UNIQUE | Login email |
+| `password` | TEXT | NOT NULL | Login password (stored as plain text in current sprint implementation) |
+| `created_at` | TIMESTAMP | DEFAULT NOW() | Account creation timestamp |
+
+**Indexes:**
+- Unique index on `email`
+
+**Relationships:**
+- Referenced by `user_profiles.user_id` (one-to-one)
+
+---
+
+### 5. `user_profiles`
 
 User account information and preferences.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `user_id` | UUID | PRIMARY KEY | Unique user identifier (can reference auth.users.id if using Supabase Auth) |
+| `user_id` | UUID | PRIMARY KEY, FK → app_users(id) | Unique user identifier from app_users |
 | `username` | TEXT | NOT NULL | User's display name |
 | `member_since` | TEXT | NOT NULL | Join date in format "MMM yyyy" (e.g., "Feb 2026") |
 | `onboarding_complete` | BOOLEAN | DEFAULT FALSE | Whether user completed onboarding |
@@ -133,7 +158,7 @@ User account information and preferences.
 
 ---
 
-### 5. `reading_history`
+### 6. `reading_history`
 
 Tracks which articles users have read, with timestamps.
 
@@ -155,7 +180,7 @@ Tracks which articles users have read, with timestamps.
 
 ---
 
-### 6. `saved_articles`
+### 7. `saved_articles`
 
 Articles that users have bookmarked or saved for later.
 
@@ -177,7 +202,7 @@ Articles that users have bookmarked or saved for later.
 
 ---
 
-### 7. `followed_interests`
+### 8. `followed_interests`
 
 Tracks which interests each user follows.
 
@@ -200,15 +225,18 @@ Tracks which interests each user follows.
 
 ## Key Relationships Summary
 
-1. **Articles ↔ Interests**: Many-to-many via `article_interests`
+1. **App Users ↔ User Profile**: One-to-one via `user_profiles.user_id`
+   - Each app user has one profile row
+
+2. **Articles ↔ Interests**: Many-to-many via `article_interests`
    - An article can have multiple interests
    - An interest can be associated with multiple articles
 
-2. **Users ↔ Articles**: 
+3. **Users ↔ Articles**: 
    - One-to-many via `reading_history` (users read many articles)
    - One-to-many via `saved_articles` (users save many articles)
 
-3. **Users ↔ Interests**: Many-to-many via `followed_interests`
+4. **Users ↔ Interests**: Many-to-many via `followed_interests`
    - A user can follow multiple interests
    - An interest can be followed by multiple users
 
@@ -216,7 +244,10 @@ Tracks which interests each user follows.
 
 | Kotlin/App Type | Database Type | Notes |
 |----------------|---------------|-------|
+| `String` (email) | TEXT | Used in `app_users.email` |
+| `String` (password) | TEXT | Used in `app_users.password` |
 | `String` (id) | TEXT | Article and Interest IDs |
+| `UUID` (user id) | UUID | Used in `app_users.id` and user-linked tables |
 | `String` (content) | TEXT | Titles, summaries, URLs |
 | `Long` (timestamp) | BIGINT | Published timestamps in milliseconds |
 | `List<Interest>` | Junction table | Stored in `article_interests` |
@@ -253,6 +284,8 @@ ORDER BY rh.read_at_millis DESC;
 - All foreign keys use `ON DELETE CASCADE` to maintain referential integrity
 - Timestamps use `TIMESTAMP WITH TIME ZONE` for proper timezone handling
 - UUIDs are generated using `uuid_generate_v4()` function
-- The `user_profiles.user_id` can be linked to Supabase Auth's `auth.users.id` if authentication is implemented
+- Current implementation uses `app_users` for simple email/password login persistence
+- Passwords are plain text in current sprint implementation (acceptable for learning/demo; not recommended for production)
+- If migrating to Supabase Auth later, `user_profiles.user_id` can instead link to `auth.users.id`
 - Denormalized fields (like `reading_history.title`) are included for performance but can be removed if you prefer to always join with `articles`
 
