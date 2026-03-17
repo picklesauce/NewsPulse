@@ -8,6 +8,12 @@ import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
 import com.example.newspulse.domain.NewsPulseModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -29,10 +35,12 @@ import org.junit.Test
  * - Deterministic results
  *
  * Note: These are pure unit tests with no Android instrumentation.
- * StateFlow updates are synchronous, so no test dispatchers are needed.
+ * UnconfinedTestDispatcher is set as Main so viewModelScope.launch works synchronously.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class FeedViewModelTest {
 
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var model: NewsPulseModel
     private lateinit var viewModel: FeedViewModel
 
@@ -42,6 +50,7 @@ class FeedViewModelTest {
      */
     @Before
     fun setUp() {
+        Dispatchers.setMain(testDispatcher)
         model = NewsPulseModel(
             newsRepository = MockNewsRepository(),
             interestsRepository = MockInterestsRepository(),
@@ -51,6 +60,11 @@ class FeedViewModelTest {
             savedArticlesRepository = InMemorySavedArticlesRepository()
         )
         viewModel = FeedViewModel(model)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     // ========== Ticket: loads fake data correctly ==========
