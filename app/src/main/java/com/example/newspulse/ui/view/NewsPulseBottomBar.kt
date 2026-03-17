@@ -56,7 +56,6 @@ fun NewsPulseBottomBar(navController: NavController) {
                     if (currentRoute == item.route) return@NavigationBarItem
                     when {
                         currentRoute == "interests" && item.route == "home" -> {
-                            // From interests, go to home: pop interests and profile so home is on top
                             navController.popBackStack("profile", inclusive = true)
                             navController.navigate("home") { launchSingleTop = true }
                         }
@@ -66,6 +65,9 @@ fun NewsPulseBottomBar(navController: NavController) {
                                 launchSingleTop = true
                                 restoreState = true
                             }
+                        }
+                        item.route == "home" -> {
+                            navController.popBackStack("home", inclusive = false)
                         }
                         else -> {
                             navController.navigate(item.route) {
