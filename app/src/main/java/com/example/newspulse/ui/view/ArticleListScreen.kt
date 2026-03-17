@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -93,6 +94,13 @@ fun ArticleListScreen(
                         color = Color(0xFF1C1B1F)
                     )
                     Spacer(modifier = Modifier.weight(1f))
+                    IconButton(onClick = { viewModel.onRefresh() }) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh feed",
+                            tint = Color(0xFF1C1B1F)
+                        )
+                    }
                     IconButton(
                         onClick = { isSearchExpanded = !isSearchExpanded }
                     ) {

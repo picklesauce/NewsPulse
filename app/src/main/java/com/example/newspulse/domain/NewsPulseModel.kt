@@ -57,6 +57,18 @@ class NewsPulseModel(
     fun setUsername(username: String) {
         userPreferencesRepository.setUsername(username)
     }
+
+    /** Returns true if the given email and password match the stored credentials (from sign up). */
+    fun validateLogin(email: String, password: String): Boolean {
+        val storedEmail = userPreferencesRepository.getStoredEmail()
+        if (storedEmail.isBlank()) return false
+        return userPreferencesRepository.getStoredEmail() == email &&
+            userPreferencesRepository.getStoredPassword() == password
+    }
+
+    fun setStoredCredentials(email: String, password: String) {
+        userPreferencesRepository.setStoredCredentials(email, password)
+    }
     fun getMemberSince(): String = userPreferencesRepository.getMemberSince()
     fun setMemberSinceIfFirstTime() {
         userPreferencesRepository.setMemberSinceIfFirstTime()

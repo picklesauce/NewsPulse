@@ -51,6 +51,7 @@ class SignUpViewModel(private val model: NewsPulseModel) : ViewModel() {
             }
             else -> {
                 model.setUsername(s.username)
+                model.setStoredCredentials(s.email, s.password)
                 model.setMemberSinceIfFirstTime()
                 true
             }
