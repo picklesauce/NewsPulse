@@ -303,7 +303,7 @@ fun ArticleListScreen(
 }
 
 @Composable
-private fun ArticleCard(
+internal fun ArticleCard(
     article: Article,
     imagePlaceholderText: String,
     onClick: () -> Unit
