@@ -39,14 +39,6 @@ Show the saved list as proof that article actions persist in the user flow.
 
 ![Saved articles screen](docs/images/saved-screen.png)
 
-## 2-minute live demo script
-
-1. Start on **Home** and call out topic filtering.
-2. Open an article, then save it.
-3. Move to **Profile** and update one interest.
-4. Open **Saved** and confirm the saved article appears.
-5. Return to **Home** and highlight that interests/saved content drive personalization.
-
 ## Optional: enable live articles (NewsAPI.ai / Event Registry)
 
 If you want live data instead of mocks:
@@ -67,9 +59,4 @@ The app follows a layered architecture:
 - `domain/` - Core models and repository interfaces. Defines business contracts and stays framework-light.
 - `data/` - Repository implementations, persistence/network adapters, and mocks used for tests and demos.
 
-## Useful links
-
-- [Team Contract](../../wikis/Team-Contract)
-- [Project Proposal](../../wikis/Project-Proposal)
-- [Team Meetings](../../wikis/Team-Meetings)
 
