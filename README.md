@@ -1,4 +1,4 @@
-# NewsPulse (Team-101-17)
+# NewsPulse 
 
 NewsPulse is an Android app for browsing news and managing topic interests.
 It is set up to be demo-ready out of the box with built-in mock data, and can
