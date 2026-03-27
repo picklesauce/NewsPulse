@@ -24,9 +24,12 @@ data class FeedUiState(
     val activeTopicFilters: Set<String> = emptySet(),
     /** Shown when articles list is empty; null when there are articles. */
     val emptyStateMessage: String? = null,
+    /** True when the feed has very few articles; UI can show a hint. */
+    val isCoverageThin: Boolean = false,
+    /** True when the feed is populated from fallback keywords rather than user interests. */
+    val isFallbackFeed: Boolean = false,
     val headerTitle: String = "NewsPulse",
     val searchPlaceholder: String = "Search articles...",
-    /** Placeholder text when article has no image (e.g. "[IMAGE]"). */
     val imagePlaceholderText: String = "[IMAGE]"
 )
 
@@ -50,7 +53,7 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
         }
         viewModelScope.launch {
             try {
-                model.refreshNews()
+                model.forceRefreshNews()
             } finally {
                 refreshArticles()
                 _uiState.update { it.copy(isLoading = false) }
@@ -83,7 +86,12 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     private fun refreshArticles() {
         val interests = model.getFollowedInterestNames()
-        var base = model.getFeed().filter { it.matchesInterests(interests) }
+        val fullFeed = model.getFeed()
+        var base = fullFeed.filter { it.matchesInterests(interests) }
+
+        val isFallback = base.isEmpty() && fullFeed.isNotEmpty()
+        if (isFallback) base = fullFeed
+
         val activeFilters = _uiState.value.activeTopicFilters
         if (activeFilters.isNotEmpty()) {
             base = base.filter { article -> article.topics.any { it in activeFilters } }
@@ -94,18 +102,27 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
         } else {
             base.filter { it.matches(query) }
         }
+
+        val isThin = articles.size in 1..THIN_FEED_THRESHOLD
         val emptyMessage = when {
             articles.isNotEmpty() -> null
             query.isNotBlank() -> "No articles match your search"
             activeFilters.isNotEmpty() -> "No articles for the selected topics"
-            else -> "No articles match your interests"
+            interests.isEmpty() -> "Follow some topics to build your feed"
+            else -> "No articles yet — try adding more interests from Discover"
         }
         _uiState.update {
             it.copy(
                 articles = articles,
                 selectedInterests = interests,
-                emptyStateMessage = emptyMessage
+                emptyStateMessage = emptyMessage,
+                isCoverageThin = isThin,
+                isFallbackFeed = isFallback && articles.isNotEmpty()
             )
         }
+    }
+
+    companion object {
+        private const val THIN_FEED_THRESHOLD = 5
     }
 }

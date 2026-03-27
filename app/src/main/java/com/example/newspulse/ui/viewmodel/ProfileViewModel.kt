@@ -8,4 +8,5 @@ class ProfileViewModel(private val model: NewsPulseModel) : ViewModel() {
     val memberSince: String get() = model.getMemberSince()
     val interests: Set<String> get() = model.getFollowedInterests().map { it.name }.toSet()
     val readingHistory get() = model.getReadingHistory()
+    fun signOut() { model.signOut() }
 }

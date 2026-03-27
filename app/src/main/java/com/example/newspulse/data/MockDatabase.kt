@@ -128,12 +128,14 @@ class MockDatabase(
     }
 
     override suspend fun recordArticleRead(userId: UUID, articleId: UUID, readAt: Instant) {
+        readingHistory.removeAll { it.first == userId && it.second == articleId }
         readingHistory.add(Triple(userId, articleId, readAt))
     }
 
     override suspend fun getReadingHistoryForUser(userId: UUID, limit: Int?): List<Article> {
         val userEntries = readingHistory.filter { it.first == userId }
             .sortedByDescending { it.third }
+            .distinctBy { it.second }
         val limited = if (limit != null) userEntries.take(limit) else userEntries
         return limited.mapNotNull { (_, articleId, _) -> articles[articleId] }
             .map { a ->

@@ -17,6 +17,9 @@ interface EventRegistryApi {
         @Query("lang") lang: String = "eng",
         @Query("articlesCount") articlesCount: Int = 30,
         @Query("articlesSortBy") articlesSortBy: String = "date",
-        @Query("articlesSortByAsc") articlesSortByAsc: Boolean = false
+        @Query("articlesSortByAsc") articlesSortByAsc: Boolean = false,
+        @Query("keywordsLoc") keywordsLoc: String = "body,title",
+        @Query("isDuplicateFilter") isDuplicateFilter: String = "skipDuplicates",
+        @Query("dateStart") dateStart: String? = null
     ): Response<GetArticlesResponse>
 }

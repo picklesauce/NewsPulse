@@ -15,12 +15,13 @@ import kotlinx.coroutines.flow.update
  * Interests list comes from ViewModel; follow toggle triggers ViewModel event ([onFollowToggle]).
  */
 data class InterestsUiState(
-    /** Interests to show, grouped by type. Comes from ViewModel only. */
     val interestsToShow: List<Pair<InterestType, List<Interest>>> = emptyList(),
     val followedIds: Set<String> = emptySet(),
     val typeFilter: InterestType? = null,
+    val searchQuery: String = "",
+    val canAddCustom: Boolean = false,
     val headerTitle: String = "Interests",
-    val subtitle: String = "Follow or unfollow to personalize your feed. Changes apply immediately.",
+    val subtitle: String = "Follow or unfollow to personalize your feed, or add your own.",
     val filterAllLabel: String = "All",
     val showingFilterLabel: String = "Showing: %s"
 )
@@ -34,6 +35,7 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     private val _followedIds = MutableStateFlow(model.getFollowedInterestIds())
     private val _typeFilter = MutableStateFlow<InterestType?>(null)
+    private val _searchQuery = MutableStateFlow("")
 
     private val allInterests: List<Interest> get() = model.getAllInterests()
 
@@ -42,17 +44,31 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
             type to allInterests.filterByType(type)
         }.filter { it.second.isNotEmpty() }
 
-    private fun computeInterestsToShow(): List<Pair<InterestType, List<Interest>>> =
-        _typeFilter.value?.let { type ->
+    private fun computeInterestsToShow(): List<Pair<InterestType, List<Interest>>> {
+        val query = _searchQuery.value.trim().lowercase()
+        val grouped = _typeFilter.value?.let { type ->
             val list = allInterests.filterByType(type)
             if (list.isEmpty()) emptyList() else listOf(type to list)
         } ?: interestsGroupedByType
 
-    private fun buildUiState(): InterestsUiState = InterestsUiState(
-        interestsToShow = computeInterestsToShow(),
-        followedIds = _followedIds.value,
-        typeFilter = _typeFilter.value
-    )
+        if (query.isEmpty()) return grouped
+        return grouped.map { (type, interests) ->
+            type to interests.filter { it.name.lowercase().contains(query) }
+        }.filter { it.second.isNotEmpty() }
+    }
+
+    private fun buildUiState(): InterestsUiState {
+        val query = _searchQuery.value.trim()
+        val canAdd = query.length >= 2 &&
+            allInterests.none { it.name.equals(query, ignoreCase = true) }
+        return InterestsUiState(
+            interestsToShow = computeInterestsToShow(),
+            followedIds = _followedIds.value,
+            typeFilter = _typeFilter.value,
+            searchQuery = query,
+            canAddCustom = canAdd
+        )
+    }
 
     private val _uiState = MutableStateFlow(buildUiState())
     val uiState: StateFlow<InterestsUiState> = _uiState.asStateFlow()
@@ -65,12 +81,16 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
         refreshUiState()
     }
 
+    fun onSearchQueryChange(query: String) {
+        _searchQuery.value = query
+        refreshUiState()
+    }
+
     fun setTypeFilter(type: InterestType?) {
         _typeFilter.value = type
         refreshUiState()
     }
 
-    /** ViewModel event: follow toggle. Call from the UI when user taps an interest chip. */
     fun onFollowToggle(id: String) {
         if (_followedIds.value.contains(id)) {
             model.unfollowInterest(id)
@@ -79,6 +99,15 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
             model.followInterest(id)
             _followedIds.update { it + id }
         }
+        refreshUiState()
+    }
+
+    fun addCustomInterest(type: InterestType) {
+        val name = _searchQuery.value.trim()
+        if (name.length < 2) return
+        val interest = model.addCustomInterest(name, type)
+        _followedIds.update { it + interest.id }
+        _searchQuery.value = ""
         refreshUiState()
     }
 

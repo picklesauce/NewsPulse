@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.newspulse.data.ArticleDiskCache
 import com.example.newspulse.data.LocalAuthRepository
 import com.example.newspulse.data.NewsApiRepository
 import com.example.newspulse.data.ReadingHistoryPreferences
@@ -46,6 +47,7 @@ import com.example.newspulse.ui.view.InterestsScreen
 import com.example.newspulse.ui.view.LoginScreen
 import com.example.newspulse.ui.view.NewsPulseScaffold
 import com.example.newspulse.ui.view.ProfileScreen
+import com.example.newspulse.ui.view.ReadingHistoryScreen
 import com.example.newspulse.ui.view.SavedArticlesScreen
 import com.example.newspulse.ui.view.SignUpScreen
 import com.example.newspulse.ui.view.TopicSelectionScreen
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
             authRepository = LocalAuthRepository(userPreferencesRepository)
         }
 
-        val newsRepository = createNewsRepository(interestsCatalogRepository)
+        val newsRepository = createNewsRepository(interestsCatalogRepository, interestsRepository)
         val model = NewsPulseModel(
             newsRepository = newsRepository,
             interestsRepository = interestsRepository,
@@ -160,6 +162,11 @@ class MainActivity : ComponentActivity() {
                                 InterestsScreen(navController = navController)
                             }
                         }
+                        composable("readingHistory") {
+                            NewsPulseScaffold(navController = navController) {
+                                ReadingHistoryScreen(navController = navController)
+                            }
+                        }
                         composable("articleDetail/{id}") { backStackEntry ->
                             val articleId = backStackEntry.arguments?.getString("id")
                             NewsPulseScaffold(navController = navController) {
@@ -175,16 +182,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createNewsRepository(catalog: InterestsCatalogRepository): NewsRepository {
+    private fun createNewsRepository(
+        catalog: InterestsCatalogRepository,
+        interestsRepo: InterestsRepository
+    ): NewsRepository {
         val apiKey = BuildConfig.NEWSAPI_AI_KEY.takeIf { it.isNotBlank() } ?: ""
         if (apiKey.isBlank()) return MockNewsRepository()
 
-        val topicInterests = catalog.getAllInterests().filter { it.type == InterestType.Topic }
         val retrofit = Retrofit.Builder()
             .baseUrl("https://eventregistry.org/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         val api = retrofit.create(EventRegistryApi::class.java)
-        return NewsApiRepository(apiKey, api, topicInterests)
+        return NewsApiRepository(
+            apiKey = apiKey,
+            api = api,
+            catalogProvider = { catalog.getAllInterests() },
+            followedIdsProvider = { interestsRepo.getFollowedInterestIds() },
+            diskCache = ArticleDiskCache(this)
+        )
     }
 }

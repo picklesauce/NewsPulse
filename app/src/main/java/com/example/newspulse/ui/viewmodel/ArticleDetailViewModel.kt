@@ -24,9 +24,15 @@ class ArticleDetailViewModel(private val model: NewsPulseModel) : ViewModel() {
     /**
      * Loads the article and its related articles by id. Call from the screen when articleId is available
      * (e.g. from route articleDetail/{id}). Also adds the article to reading history.
+     * If the article isn't found in the feed or saved-articles cache, refreshes saved
+     * articles from the DB and retries once.
      */
     fun loadArticle(articleId: String) {
-        val a = model.getArticle(articleId)
+        var a = model.getArticle(articleId)
+        if (a == null) {
+            model.refreshSavedArticles()
+            a = model.getArticle(articleId)
+        }
         _article.value = a
         _relatedArticles.value = a?.let { model.getRelatedArticles(it.id) } ?: emptyList()
         a?.let { model.addToReadingHistory(it.id, it.title) }

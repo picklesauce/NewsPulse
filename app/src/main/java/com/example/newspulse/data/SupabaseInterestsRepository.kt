@@ -58,6 +58,8 @@ class SupabaseInterestsRepository(
         )
     }
 
+    override fun onUserChanged() { reload() }
+
     override fun isOnboardingComplete(): Boolean = onboardingComplete
 
     override fun setOnboardingComplete() {

@@ -2,6 +2,7 @@ package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.newspulse.domain.NewsPulseModel
+import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.util.filterMatchingQuery
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,15 +24,29 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     fun toggleTopic(topic: String) {
         _selectedTopics.update { current ->
-            if (current.contains(topic)) {
-                current - topic
-            } else {
-                current + topic
-            }
+            if (current.contains(topic)) current - topic else current + topic
         }
     }
 
     fun getFilteredTopics(): List<String> = allTopics.filterMatchingQuery(_searchQuery.value)
+
+    /**
+     * Returns true if the current search query doesn't match any existing interest,
+     * meaning the user can add it as a custom interest.
+     */
+    fun canAddCustom(): Boolean {
+        val q = _searchQuery.value.trim()
+        if (q.length < 2) return false
+        return allTopics.none { it.equals(q, ignoreCase = true) }
+    }
+
+    fun addCustomInterest(type: InterestType) {
+        val name = _searchQuery.value.trim()
+        if (name.length < 2) return
+        val interest = model.addCustomInterest(name, type)
+        _selectedTopics.update { it + interest.name }
+        _searchQuery.value = ""
+    }
 
     fun saveAndContinue() {
         val ids = model.getAllInterests()

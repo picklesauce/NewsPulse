@@ -1,6 +1,7 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.Article
 import com.example.newspulse.domain.model.Interest
@@ -9,16 +10,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class DiscoverUiState(
-    /** All interests from the catalog, grouped by type. */
     val interestsByType: Map<InterestType, List<Interest>> = emptyMap(),
-    /** Active type filter in the browse view; null = show all types. */
     val typeFilter: InterestType? = null,
-    /** Interest the user tapped — triggers article list view. Null = browse view. */
     val selectedInterest: Interest? = null,
-    /** Articles for the selectedInterest. Empty when no interest is selected. */
-    val articlesForSelected: List<Article> = emptyList()
+    val articlesForSelected: List<Article> = emptyList(),
+    val isLoading: Boolean = false,
+    val isFollowed: Boolean = false
 )
 
 class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
@@ -34,23 +34,45 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
     }
 
     fun onSelectInterest(interest: Interest) {
-        val articles = model.getFeed().filter { article ->
-            article.interests.any { it.id == interest.id }
-        }
+        val followed = model.getFollowedInterestIds().contains(interest.id)
         _uiState.update {
-            it.copy(selectedInterest = interest, articlesForSelected = articles)
+            it.copy(
+                selectedInterest = interest,
+                articlesForSelected = emptyList(),
+                isLoading = true,
+                isFollowed = followed
+            )
+        }
+        viewModelScope.launch {
+            val articles = model.searchArticlesByKeyword(interest.name)
+            _uiState.update {
+                it.copy(articlesForSelected = articles, isLoading = false)
+            }
         }
     }
 
     fun onClearSelection() {
-        _uiState.update { it.copy(selectedInterest = null, articlesForSelected = emptyList()) }
+        _uiState.update {
+            it.copy(
+                selectedInterest = null,
+                articlesForSelected = emptyList(),
+                isLoading = false,
+                isFollowed = false
+            )
+        }
+    }
+
+    fun onFollowTopic() {
+        val interest = _uiState.value.selectedInterest ?: return
+        if (_uiState.value.isFollowed) return
+        model.addCustomInterest(interest.name, interest.type)
+        _uiState.update { it.copy(isFollowed = true) }
     }
 
     fun onSetTypeFilter(type: InterestType?) {
         _uiState.update { it.copy(typeFilter = type) }
     }
 
-    /** Returns the visible interests based on the current typeFilter. */
     fun visibleInterestsByType(): Map<InterestType, List<Interest>> {
         val filter = _uiState.value.typeFilter ?: return _uiState.value.interestsByType
         return _uiState.value.interestsByType.filterKeys { it == filter }

@@ -111,6 +111,15 @@ class SupabaseAuthRepository(
             .getOrElse { AuthResult(false, it.message ?: "Unknown network error") }
 
     private fun ensureUserProfile(userId: String, email: String) {
+        val existing = client.select(
+            table = "user_profiles",
+            columns = "user_id",
+            filters = mapOf("user_id" to "eq.$userId"),
+            limit = 1,
+            useUserAuth = false
+        )
+        if (existing.length() > 0) return
+
         val username = email.substringBefore("@").ifBlank { "user_${userId.take(8)}" }
         val memberSince = SimpleDateFormat("MMM yyyy", Locale.US).format(Date())
         val body = JSONObject()
@@ -121,8 +130,6 @@ class SupabaseAuthRepository(
         client.insert(
             table = "user_profiles",
             body = body,
-            onConflict = "user_id",
-            upsert = true,
             useUserAuth = false
         )
     }

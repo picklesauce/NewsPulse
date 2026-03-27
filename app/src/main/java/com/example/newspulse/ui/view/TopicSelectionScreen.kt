@@ -3,17 +3,24 @@ package com.example.newspulse.ui.view
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -25,6 +32,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.ui.CompositionLocals
 import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
@@ -47,6 +59,8 @@ fun TopicSelectionScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedTopics by viewModel.selectedTopics.collectAsState()
     val filteredTopics = viewModel.getFilteredTopics()
+    val canAddCustom = viewModel.canAddCustom()
+    var typePickerExpanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -71,7 +85,7 @@ fun TopicSelectionScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Select topics you're interested in to personalize your news feed",
+                text = "Select topics you're interested in, or search and add your own",
                 fontSize = 16.sp,
                 color = Color(0xFF49454F),
                 lineHeight = 24.sp
@@ -85,7 +99,7 @@ fun TopicSelectionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
                     Text(
-                        text = "Search interests",
+                        text = "Search or add interests",
                         color = Color(0xFF79747E)
                     )
                 },
@@ -106,6 +120,49 @@ fun TopicSelectionScreen(
                     focusedLeadingIconColor = Color(0xFF6750A4)
                 )
             )
+
+            if (canAddCustom) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AssistChip(
+                        onClick = { typePickerExpanded = true },
+                        label = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = Color(0xFF6750A4)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Add \"${searchQuery.trim()}\"",
+                                    color = Color(0xFF6750A4)
+                                )
+                            }
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = Color(0xFFF3EDF7)
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp, Color(0xFF6750A4)
+                        )
+                    )
+                    DropdownMenu(
+                        expanded = typePickerExpanded,
+                        onDismissRequest = { typePickerExpanded = false }
+                    ) {
+                        InterestType.entries.forEach { type ->
+                            DropdownMenuItem(
+                                text = { Text(type.name) },
+                                onClick = {
+                                    viewModel.addCustomInterest(type)
+                                    typePickerExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

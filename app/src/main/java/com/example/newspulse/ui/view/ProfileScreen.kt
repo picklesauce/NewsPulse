@@ -174,13 +174,30 @@ fun ProfileScreen(
             HorizontalDivider(color = Color(0xFFE7E0EC), thickness = 1.dp)
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "READING HISTORY",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1C1B1F),
-                letterSpacing = 0.5.sp
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "READING HISTORY",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1C1B1F),
+                    letterSpacing = 0.5.sp
+                )
+                if (readingHistory.size > 5) {
+                    Text(
+                        text = "See all",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF2979FF),
+                        modifier = Modifier.clickable {
+                            navController.navigate("readingHistory")
+                        }
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
             if (readingHistory.isEmpty()) {
                 Text(
@@ -190,10 +207,10 @@ fun ProfileScreen(
                     modifier = Modifier.padding(vertical = 16.dp)
                 )
             } else {
-                readingHistory.forEach { item ->
+                readingHistory.take(5).forEach { item ->
                     ReadingHistoryCard(
                         title = item.title,
-                        timeAgo = formatTimeAgo(item.readAtMillis),
+                        timeAgo = formatHistoryTimeAgo(item.readAtMillis),
                         onClick = { navController.navigate("articleDetail/${item.articleId}") }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -204,8 +221,9 @@ fun ProfileScreen(
 
             OutlinedButton(
                 onClick = {
+                    viewModel.signOut()
                     navController.navigate("login") {
-                        popUpTo("login") { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
                 },
@@ -273,18 +291,6 @@ private fun ReadingHistoryCard(
     }
 }
 
-private fun formatTimeAgo(millis: Long): String {
-    val diff = System.currentTimeMillis() - millis
-    val minutes = diff / (60 * 1000)
-    val hours = diff / (60 * 60 * 1000)
-    val days = diff / (24 * 60 * 60 * 1000)
-    return when {
-        minutes < 60 -> "${minutes}m ago"
-        hours < 24 -> "${hours}h ago"
-        days < 7 -> "${days}d ago"
-        else -> "${days / 7}w ago"
-    }
-}
 
 @Preview(showBackground = true)
 @Composable

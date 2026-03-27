@@ -36,7 +36,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
+
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,10 +69,6 @@ fun ArticleListScreen(
     val state by viewModel.uiState.collectAsState()
     var isSearchExpanded by remember { mutableStateOf(false) }
     var filterExpanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        viewModel.onRefresh()
-    }
 
     Column(
         modifier = Modifier
@@ -199,12 +195,10 @@ fun ArticleListScreen(
                 shape = RoundedCornerShape(12.dp),
                 enabled = false
             )
-            // Transparent overlay to capture click — required because OutlinedTextField
-            // consumes touch events internally and ignores .clickable on itself
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .clickable { filterExpanded = true }
+                    .clickable { if (!filterExpanded) filterExpanded = true }
             )
             DropdownMenu(
                 expanded = filterExpanded,
@@ -255,16 +249,17 @@ fun ArticleListScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             state.selectedInterests.forEach { topic ->
+                val isActive = state.activeTopicFilters.isEmpty() || topic in state.activeTopicFilters
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFFF5F5F5),
-                    modifier = Modifier.clickable { viewModel.unfollowInterest(topic) }
+                    color = if (isActive) Color(0xFF1C1B1F) else Color(0xFFF5F5F5),
+                    modifier = Modifier.clickable { viewModel.onToggleTopicFilter(topic) }
                 ) {
                     Text(
                         text = topic,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                         fontSize = 14.sp,
-                        color = Color(0xFF333333)
+                        color = if (isActive) Color.White else Color(0xFF333333)
                     )
                 }
             }
@@ -292,13 +287,40 @@ fun ArticleListScreen(
                         .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = state.emptyStateMessage ?: "",
-                        color = Color(0xFF79747E),
-                        fontSize = 16.sp
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = state.emptyStateMessage ?: "",
+                            color = Color(0xFF79747E),
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Explore topics",
+                            color = Color(0xFF6750A4),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clickable {
+                                navController.navigate("explore")
+                            }
+                        )
+                    }
                 }
             } else {
+                if (state.isFallbackFeed) {
+                    FeedBanner(
+                        text = "Showing trending articles while we find content for your interests",
+                        actionLabel = "Add more interests",
+                        onAction = { navController.navigate("explore") }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                } else if (state.isCoverageThin) {
+                    FeedBanner(
+                        text = "Coverage is limited for some interests",
+                        actionLabel = "Discover more topics",
+                        onAction = { navController.navigate("explore") }
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
                 state.articles.forEach { article ->
                     ArticleCard(
                         article = article,
@@ -309,6 +331,40 @@ fun ArticleListScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun FeedBanner(
+    text: String,
+    actionLabel: String,
+    onAction: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFFF3EDF7)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = text,
+                modifier = Modifier.weight(1f),
+                fontSize = 13.sp,
+                color = Color(0xFF49454F),
+                lineHeight = 18.sp
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = actionLabel,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF6750A4),
+                modifier = Modifier.clickable(onClick = onAction)
+            )
         }
     }
 }

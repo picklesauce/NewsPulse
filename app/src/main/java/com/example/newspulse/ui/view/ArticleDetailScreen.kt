@@ -46,7 +46,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.newspulse.domain.model.Article
-import com.example.newspulse.domain.util.estimateReadTime
 import com.example.newspulse.ui.CompositionLocals
 import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
@@ -80,13 +79,9 @@ fun ArticleDetailScreen(
         )
 
         ArticleContent(
-            body = generatePlaceholderBody(),
+            body = article?.summary ?: "",
             imageUrl = article?.imageUrl ?: "",
-            readTime = estimateReadTime(
-                (article?.title ?: "") + " " +
-                (article?.summary ?: "") + " " +
-                generatePlaceholderBody()
-            ),
+            readTime = article?.readTime ?: "",
             relatedArticles = relatedArticles,
             onRelatedArticleClick = { id -> navController.navigate("articleDetail/$id") }
         )
@@ -322,19 +317,6 @@ private fun shareArticle(context: Context, article: Article) {
     context.startActivity(Intent.createChooser(intent, "Share article"))
 }
 
-fun generatePlaceholderBody(): String {
-    return """
-        In a groundbreaking development that could reshape the future of technology, researchers at the Institute of Advanced Studies have announced a major breakthrough in quantum computing capabilities. The discovery promises to accelerate computational power by orders of magnitude.
-
-        Dr. Sarah Chen, lead researcher on the project, explained that the team has successfully developed a new approach to quantum error correction that significantly improves the stability and reliability of quantum systems. "This is a game-changer for the field," she stated during a press conference held earlier today.
-
-        The implications of this breakthrough extend far beyond the laboratory. Industry experts predict that this advancement could revolutionize fields ranging from cryptography to drug discovery, potentially solving complex problems that have stumped classical computers for decades.
-
-        The research team, which has been working on this project for over five years, utilized cutting-edge techniques in quantum mechanics to achieve these results. Their findings have been peer-reviewed and published in several leading scientific journals, receiving widespread acclaim from the academic community.
-
-        As the technology continues to mature, we can expect to see practical applications emerge in the coming years, marking a significant milestone in the evolution of computing technology.
-    """.trimIndent()
-}
 
 @Preview(showBackground = true)
 @Composable

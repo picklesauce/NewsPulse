@@ -79,7 +79,7 @@ class InterestsViewModelTest {
         val state = viewModel.uiState.value
 
         assertEquals("Interests", state.headerTitle)
-        assertEquals("Follow or unfollow to personalize your feed. Changes apply immediately.", state.subtitle)
+        assertEquals("Follow or unfollow to personalize your feed, or add your own.", state.subtitle)
         assertEquals("All", state.filterAllLabel)
         assertEquals("Showing: %s", state.showingFilterLabel)
     }
