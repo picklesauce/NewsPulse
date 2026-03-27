@@ -14,16 +14,39 @@ class SupabaseSavedArticlesRepository(
     private val userIdProvider: () -> String?
 ) : SavedArticlesRepository {
     private val saved = MutableStateFlow<List<Article>>(emptyList())
+    private val localArticleCache = mutableMapOf<String, Article>()
 
     init {
         refreshSaved()
     }
 
     override fun getSavedArticles(): Flow<List<Article>> = saved.asStateFlow()
+    override fun getSavedArticlesList(): List<Article> = saved.value
+
+    override fun onUserChanged() {
+        refreshSaved()
+    }
+
+    override fun clearState() {
+        saved.value = emptyList()
+        localArticleCache.clear()
+    }
 
     override fun saveArticle(article: Article) {
         val userId = userIdProvider() ?: return
-        ensureArticleExists(article)
+        localArticleCache[article.id] = article
+
+        val articleStored = ensureArticleExists(article)
+        if (!articleStored) return
+
+        client.delete(
+            table = "saved_articles",
+            filters = mapOf(
+                "user_id" to "eq.$userId",
+                "article_id" to "eq.${article.id}"
+            )
+        )
+
         val row = JSONObject()
             .put("id", UUID.randomUUID().toString())
             .put("user_id", userId)
@@ -34,6 +57,7 @@ class SupabaseSavedArticlesRepository(
 
     override fun removeArticle(article: Article) {
         val userId = userIdProvider() ?: return
+        localArticleCache.remove(article.id)
         client.delete(
             table = "saved_articles",
             filters = mapOf(
@@ -66,13 +90,14 @@ class SupabaseSavedArticlesRepository(
             return
         }
 
+        val byId = mutableMapOf<String, Article>()
+
         val inClause = idsInOrder.joinToString(",") { "\"$it\"" }
         val articles = client.select(
             table = "articles",
             columns = "id,title,source,url,published_at,summary,image_url",
             filters = mapOf("id" to "in.($inClause)")
         )
-        val byId = mutableMapOf<String, Article>()
         for (i in 0 until articles.length()) {
             val r = articles.optJSONObject(i) ?: continue
             val id = r.optString("id")
@@ -88,10 +113,19 @@ class SupabaseSavedArticlesRepository(
                 interests = emptyList()
             )
         }
+
+        for (id in idsInOrder) {
+            if (id !in byId) {
+                localArticleCache[id]?.let { byId[id] = it }
+            }
+        }
+
+        byId.values.forEach { localArticleCache[it.id] = it }
+
         saved.value = idsInOrder.mapNotNull { byId[it] }
     }
 
-    private fun ensureArticleExists(article: Article) {
+    private fun ensureArticleExists(article: Article): Boolean {
         val body = JSONObject()
             .put("id", article.id)
             .put("title", article.title)
@@ -100,7 +134,7 @@ class SupabaseSavedArticlesRepository(
             .put("published_at", article.publishedAt)
             .put("summary", article.summary)
             .put("image_url", article.imageUrl)
-        client.insert(
+        return client.insert(
             table = "articles",
             body = body,
             onConflict = "id",

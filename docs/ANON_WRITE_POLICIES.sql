@@ -89,6 +89,13 @@ using (true);
 
 -- articles (needed when app upserts unseen articles before save/history)
 alter table public.articles enable row level security;
+drop policy if exists "anon can read articles" on public.articles;
+create policy "anon can read articles"
+on public.articles
+for select
+to anon
+using (true);
+
 drop policy if exists "anon can insert articles" on public.articles;
 create policy "anon can insert articles"
 on public.articles

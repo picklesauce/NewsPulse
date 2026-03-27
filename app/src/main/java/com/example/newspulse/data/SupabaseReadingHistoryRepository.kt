@@ -36,12 +36,16 @@ class SupabaseReadingHistoryRepository(
                     )
                 }
             }
-        }
+        }.distinctBy { it.articleId }
     }
 
     override fun addToHistory(articleId: String, title: String) {
         val userId = userIdProvider() ?: return
         ensureArticleExists(articleId = articleId, title = title)
+        client.delete(
+            table = "reading_history",
+            filters = mapOf("user_id" to "eq.$userId", "article_id" to "eq.$articleId")
+        )
         val now = System.currentTimeMillis()
         val row = JSONObject()
             .put("id", UUID.randomUUID().toString())

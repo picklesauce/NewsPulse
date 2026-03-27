@@ -9,11 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.Alignment
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,35 +53,21 @@ fun SavedArticlesScreen(
     ) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.Black
+            color = Color.White
         ) {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "9:41",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text(
-                        text = "100%",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal
-                    )
-                }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            ) {
                 Text(
                     text = "Saved Articles",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    color = Color.White,
-                    fontSize = 32.sp,
+                    color = Color(0xFF1C1B1F),
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = Color(0xFFE7E0EC), thickness = 1.dp)
             }
         }
 
@@ -108,56 +99,67 @@ fun SavedArticlesScreen(
                         .padding(horizontal = 16.dp)
                 ) {
                     savedArticles.forEachIndexed { index, article ->
-                        Column(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
                                     navController.navigate("articleDetail/${article.id}")
                                 }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = article.title,
-                                color = Color.Black,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            Row(
-                                modifier = Modifier.padding(bottom = 16.dp)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = article.title,
+                                    color = Color.Black,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(bottom = 6.dp)
+                                )
+                                Row {
+                                    Text(
+                                        text = article.source,
+                                        color = Color(0xFF666666),
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = " • ",
+                                        color = Color(0xFF666666),
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = article.readTime,
+                                        color = Color(0xFF666666),
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = " • ",
+                                        color = Color(0xFF666666),
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = article.hoursAgo,
+                                        color = Color(0xFF666666),
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = { viewModel.removeArticle(article) }
                             ) {
-                                Text(
-                                    text = article.source,
-                                    color = Color(0xFF666666),
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = " • ",
-                                    color = Color(0xFF666666),
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = article.readTime,
-                                    color = Color(0xFF666666),
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = " • ",
-                                    color = Color(0xFF666666),
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = article.hoursAgo,
-                                    color = Color(0xFF666666),
-                                    fontSize = 12.sp
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Remove saved article",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = Color(0xFF79747E)
                                 )
                             }
-                            if (index < savedArticles.size - 1) {
-                                Divider(
-                                    color = Color(0xFFE0E0E0),
-                                    thickness = 1.dp
-                                )
-                            }
+                        }
+                        if (index < savedArticles.size - 1) {
+                            HorizontalDivider(
+                                color = Color(0xFFE0E0E0),
+                                thickness = 1.dp
+                            )
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))

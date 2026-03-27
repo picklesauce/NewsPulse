@@ -7,4 +7,5 @@ interface InterestsRepository {
     fun unfollowInterest(id: String)
     fun isOnboardingComplete(): Boolean
     fun setOnboardingComplete()
+    fun onUserChanged() {}
 }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class InMemorySavedArticlesRepository : SavedArticlesRepository {
     private val _savedArticles = MutableStateFlow<List<Article>>(emptyList())
     override fun getSavedArticles(): Flow<List<Article>> = _savedArticles.asStateFlow()
+    override fun getSavedArticlesList(): List<Article> = _savedArticles.value
 
     override fun saveArticle(article: Article) {
         val current = _savedArticles.value.toMutableList()

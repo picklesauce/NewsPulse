@@ -2,6 +2,7 @@ package com.example.newspulse.domain
 
 import com.example.newspulse.domain.model.Article
 import com.example.newspulse.domain.model.Interest
+import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.model.ReadingHistoryItem
 import com.example.newspulse.domain.model.UserProfile
 import com.example.newspulse.domain.util.scoreRelatedArticles
@@ -16,22 +17,39 @@ class NewsPulseModel(
     private val savedArticlesRepository: SavedArticlesRepository,
     private val authRepository: AuthRepository? = null
 ) {
+    private val discoverCache = mutableMapOf<String, Article>()
+
     fun getFeed(): List<Article> = newsRepository.getArticles()
 
-    /** Fetches latest articles from the API; no-op if using mock repository. */
+    /** Fetches latest articles, using disk cache when fresh. */
     suspend fun refreshNews() {
         newsRepository.refresh()
     }
 
+    /** Fetches latest articles, bypassing cache TTL (for pull-to-refresh). */
+    suspend fun forceRefreshNews() {
+        newsRepository.forceRefresh()
+    }
+
     /**
      * Returns a single article by its stable [articleId].
-     * Navigation and reading history are wired to use this ID, not the title.
+     * Checks the live feed first, then falls back to saved articles so that
+     * previously-saved articles remain accessible even after interest changes.
      */
     fun getArticle(articleId: String): Article? =
         newsRepository.getArticles().find { it.id == articleId }
+            ?: savedArticlesRepository.getSavedArticlesList().find { it.id == articleId }
+            ?: discoverCache[articleId]
 
     fun getAllInterests(): List<Interest> =
         interestsCatalogRepository.getAllInterests()
+
+    /** Creates a custom interest, adds it to the catalog, and auto-follows it. */
+    fun addCustomInterest(name: String, type: InterestType): Interest {
+        val interest = interestsCatalogRepository.addCustomInterest(name, type)
+        interestsRepository.followInterest(interest.id)
+        return interest
+    }
 
     fun followInterest(id: String) {
         interestsRepository.followInterest(id)
@@ -64,18 +82,34 @@ class NewsPulseModel(
         userPreferencesRepository.setUsername(username)
     }
 
-    fun logIn(email: String, password: String): AuthResult =
-        authRepository?.signIn(email, password) ?: run {
+    fun logIn(email: String, password: String): AuthResult {
+        val result = authRepository?.signIn(email, password) ?: run {
             val ok = userPreferencesRepository.getStoredEmail() == email &&
                 userPreferencesRepository.getStoredPassword() == password
             if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
         }
+        if (result.success) onUserLoggedIn()
+        return result
+    }
 
-    fun signUp(email: String, password: String): AuthResult =
-        authRepository?.signUp(email, password) ?: run {
+    fun signUp(email: String, password: String): AuthResult {
+        val result = authRepository?.signUp(email, password) ?: run {
             userPreferencesRepository.setStoredCredentials(email, password)
             AuthResult(true)
         }
+        if (result.success) onUserLoggedIn()
+        return result
+    }
+
+    fun signOut() {
+        authRepository?.signOut()
+        savedArticlesRepository.clearState()
+    }
+
+    private fun onUserLoggedIn() {
+        interestsRepository.onUserChanged()
+        savedArticlesRepository.onUserChanged()
+    }
 
     fun setStoredCredentials(email: String, password: String) {
         userPreferencesRepository.setStoredCredentials(email, password)
@@ -91,6 +125,7 @@ class NewsPulseModel(
     }
 
     fun getSavedArticles(): Flow<List<Article>> = savedArticlesRepository.getSavedArticles()
+    fun refreshSavedArticles() { savedArticlesRepository.onUserChanged() }
     fun saveArticle(article: Article) {
         savedArticlesRepository.saveArticle(article)
     }
@@ -105,6 +140,12 @@ class NewsPulseModel(
 
     fun searchArticles(query: String): List<Article> =
         getFeed().filter { it.matches(query) }
+
+    suspend fun searchArticlesByKeyword(keyword: String): List<Article> {
+        val results = newsRepository.searchByKeyword(keyword)
+        results.forEach { discoverCache[it.id] = it }
+        return results
+    }
 
     fun getUserProfile(): UserProfile = UserProfile(
         username = getUsername(),
