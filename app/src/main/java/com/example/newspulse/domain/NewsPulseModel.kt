@@ -88,8 +88,13 @@ class NewsPulseModel(
     suspend fun logIn(email: String, password: String): AuthResult {
         val result = authRepository?.let { withContext(Dispatchers.IO) { it.signIn(email, password) } }
             ?: run {
-                val ok = userPreferencesRepository.getStoredEmail() == email &&
-                    userPreferencesRepository.getStoredPassword() == password
+                val ident = email.trim()
+                val pwdOk = userPreferencesRepository.getStoredPassword() == password
+                val emailOk = userPreferencesRepository.getStoredEmail().equals(ident, ignoreCase = true)
+                val usernameOk =
+                    userPreferencesRepository.getUsername().isNotBlank() &&
+                        userPreferencesRepository.getUsername().equals(ident, ignoreCase = true)
+                val ok = pwdOk && (emailOk || usernameOk)
                 if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
             }
         if (result.success) onUserLoggedIn()

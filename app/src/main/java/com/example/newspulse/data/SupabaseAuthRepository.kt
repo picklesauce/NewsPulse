@@ -66,17 +66,42 @@ class SupabaseAuthRepository(
     }
 
     override suspend fun signIn(email: String, password: String): AuthResult {
-        val normalizedEmail = email.trim().lowercase()
-        if (normalizedEmail.isBlank() || password.isBlank()) {
-            return AuthResult(false, "Email and password are required")
+        val raw = email.trim()
+        if (raw.isBlank() || password.isBlank()) {
+            return AuthResult(false, "Email/username and password are required")
         }
-        val rows = client.select(
-            table = usersTable,
-            columns = "id,password",
-            filters = mapOf("email" to "eq.$normalizedEmail"),
-            limit = 1,
-            useUserAuth = false
-        )
+        val rows = if (looksLikeEmail(raw)) {
+            val normalizedEmail = raw.lowercase()
+            client.select(
+                table = usersTable,
+                columns = "id,password,email",
+                filters = mapOf("email" to "eq.$normalizedEmail"),
+                limit = 1,
+                useUserAuth = false
+            )
+        } else {
+            val profiles = client.select(
+                table = "user_profiles",
+                columns = "user_id",
+                filters = mapOf("username" to "ilike.$raw"),
+                limit = 1,
+                useUserAuth = false
+            )
+            if (profiles.length() == 0) {
+                return AuthResult(false, "Invalid email or password")
+            }
+            val userId = profiles.optJSONObject(0)?.optString("user_id").orEmpty()
+            if (userId.isBlank()) {
+                return AuthResult(false, "Invalid email or password")
+            }
+            client.select(
+                table = usersTable,
+                columns = "id,password,email",
+                filters = mapOf("id" to "eq.$userId"),
+                limit = 1,
+                useUserAuth = false
+            )
+        }
         if (rows.length() == 0) {
             return AuthResult(false, "Invalid email or password")
         }
@@ -87,11 +112,14 @@ class SupabaseAuthRepository(
         }
         val userId = row.optString("id")
         if (userId.isBlank()) return AuthResult(false, "Invalid account record")
+        val emailForProfile = row.optString("email").ifBlank { raw }
         session.userId = userId
         session.accessToken = null
-        ensureUserProfile(userId, normalizedEmail)
+        ensureUserProfile(userId, emailForProfile)
         return AuthResult(true)
     }
+
+    private fun looksLikeEmail(s: String): Boolean = "@" in s
 
     override fun signOut() {
         session.clear()
