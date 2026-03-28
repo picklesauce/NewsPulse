@@ -1,7 +1,9 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.newspulse.domain.NewsPulseModel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,28 +25,30 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun updatePassword(value: String) = _uiState.update { it.copy(password = value, errorMessage = null) }
     fun togglePasswordVisible() = _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
 
-    /** Returns true if the credentials match a registered account (from sign up). */
-    fun logIn(): Boolean {
+    /** Runs sign-in off the UI thread; invokes [onResult] on the main thread. */
+    fun logIn(onResult: (Boolean) -> Unit) {
         val s = _uiState.value
-        return when {
+        when {
             s.email.isBlank() -> {
                 _uiState.update { it.copy(errorMessage = "Please enter your email address") }
-                false
+                onResult(false)
             }
             s.password.isBlank() -> {
                 _uiState.update { it.copy(errorMessage = "Please enter your password") }
-                false
+                onResult(false)
             }
             else -> {
-                val result = model.logIn(s.email.trim(), s.password)
-                if (!result.success) {
-                    _uiState.update { it.copy(errorMessage = result.errorMessage ?: "Invalid email or password") }
-                    false
-                } else {
-                    true
+                viewModelScope.launch {
+                    val result = model.logIn(s.email.trim(), s.password)
+                    if (!result.success) {
+                        _uiState.update { it.copy(errorMessage = result.errorMessage ?: "Invalid email or password") }
+                        onResult(false)
+                    } else {
+                        onResult(true)
+                    }
                 }
             }
-            }
+        }
     }
 
     fun isOnboardingComplete(): Boolean = model.isOnboardingComplete()

@@ -2,6 +2,10 @@ package com.example.newspulse.data
 
 import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.domain.InterestsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -12,32 +16,36 @@ class SupabaseInterestsRepository(
     private val client: SupabaseRestClient,
     private val userIdProvider: () -> String?
 ) : InterestsRepository {
+
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private var followedIds: MutableSet<String> = mutableSetOf()
     private var onboardingComplete: Boolean = false
+    private val stateLock = Any()
 
-    init {
-        ensureUserProfile()
-        reload()
-    }
-
-    override fun getFollowedInterestIds(): Set<String> = followedIds.toSet()
+    override fun getFollowedInterestIds(): Set<String> = synchronized(stateLock) { followedIds.toSet() }
 
     override fun setFollowedInterestIds(ids: Set<String>) {
         val userId = userIdProvider() ?: return
-        followedIds = ids.toMutableSet()
-        client.delete("followed_interests", mapOf("user_id" to "eq.$userId"))
-        ids.forEach { interestId ->
-            val row = JSONObject()
-                .put("id", UUID.randomUUID().toString())
-                .put("user_id", userId)
-                .put("interest_id", interestId)
-            client.insert(table = "followed_interests", body = row)
+        synchronized(stateLock) { followedIds = ids.toMutableSet() }
+        ioScope.launch {
+            client.delete("followed_interests", mapOf("user_id" to "eq.$userId"))
+            ids.forEach { interestId ->
+                val row = JSONObject()
+                    .put("id", UUID.randomUUID().toString())
+                    .put("user_id", userId)
+                    .put("interest_id", interestId)
+                client.insert(table = "followed_interests", body = row)
+            }
         }
     }
 
     override fun followInterest(id: String) {
         val userId = userIdProvider() ?: return
-        if (followedIds.add(id)) {
+        synchronized(stateLock) {
+            if (!followedIds.add(id)) return
+        }
+        ioScope.launch {
             val row = JSONObject()
                 .put("id", UUID.randomUUID().toString())
                 .put("user_id", userId)
@@ -48,35 +56,49 @@ class SupabaseInterestsRepository(
 
     override fun unfollowInterest(id: String) {
         val userId = userIdProvider() ?: return
-        followedIds.remove(id)
-        client.delete(
-            "followed_interests",
-            mapOf(
-                "user_id" to "eq.$userId",
-                "interest_id" to "eq.$id"
+        synchronized(stateLock) { followedIds.remove(id) }
+        ioScope.launch {
+            client.delete(
+                "followed_interests",
+                mapOf(
+                    "user_id" to "eq.$userId",
+                    "interest_id" to "eq.$id"
+                )
             )
-        )
+        }
     }
 
-    override fun onUserChanged() { reload() }
+    override fun onUserChanged() {
+        ioScope.launch { runCatching { reloadSuspend() } }
+    }
 
-    override fun isOnboardingComplete(): Boolean = onboardingComplete
+    override fun isOnboardingComplete(): Boolean = synchronized(stateLock) { onboardingComplete }
 
     override fun setOnboardingComplete() {
         val userId = userIdProvider() ?: return
-        onboardingComplete = true
-        val body = JSONObject().put("onboarding_complete", true)
-        client.patch(
-            table = "user_profiles",
-            body = body,
-            filters = mapOf("user_id" to "eq.$userId")
-        )
+        synchronized(stateLock) { onboardingComplete = true }
+        ioScope.launch {
+            val body = JSONObject().put("onboarding_complete", true)
+            client.patch(
+                table = "user_profiles",
+                body = body,
+                filters = mapOf("user_id" to "eq.$userId")
+            )
+        }
     }
 
-    private fun reload() {
+    /** Loads profile + followed interests from Supabase; call from IO dispatcher during bootstrap. */
+    suspend fun awaitInitialSync() {
+        ensureUserProfileSuspend()
+        reloadSuspend()
+    }
+
+    private suspend fun reloadSuspend() {
         val userId = userIdProvider() ?: run {
-            followedIds = mutableSetOf()
-            onboardingComplete = false
+            synchronized(stateLock) {
+                followedIds = mutableSetOf()
+                onboardingComplete = false
+            }
             return
         }
         val followedRows = client.select(
@@ -89,7 +111,6 @@ class SupabaseInterestsRepository(
             val id = followedRows.optJSONObject(i)?.optString("interest_id").orEmpty()
             if (id.isNotBlank()) loaded.add(id)
         }
-        followedIds = loaded
 
         val userRows = client.select(
             table = "user_profiles",
@@ -97,14 +118,18 @@ class SupabaseInterestsRepository(
             filters = mapOf("user_id" to "eq.$userId"),
             limit = 1
         )
-        onboardingComplete = if (userRows.length() > 0) {
+        val ob = if (userRows.length() > 0) {
             userRows.optJSONObject(0)?.optBoolean("onboarding_complete", false) == true
         } else {
             false
         }
+        synchronized(stateLock) {
+            followedIds = loaded
+            onboardingComplete = ob
+        }
     }
 
-    private fun ensureUserProfile() {
+    private suspend fun ensureUserProfileSuspend() {
         val userId = userIdProvider() ?: return
         val rows = client.select(
             table = "user_profiles",

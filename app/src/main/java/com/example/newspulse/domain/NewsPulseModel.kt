@@ -8,6 +8,8 @@ import com.example.newspulse.domain.model.UserProfile
 import com.example.newspulse.domain.util.ArticleDeduplicator
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class NewsPulseModel(
     private val newsRepository: NewsRepository,
@@ -83,21 +85,23 @@ class NewsPulseModel(
         userPreferencesRepository.setUsername(username)
     }
 
-    fun logIn(email: String, password: String): AuthResult {
-        val result = authRepository?.signIn(email, password) ?: run {
-            val ok = userPreferencesRepository.getStoredEmail() == email &&
-                userPreferencesRepository.getStoredPassword() == password
-            if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
-        }
+    suspend fun logIn(email: String, password: String): AuthResult {
+        val result = authRepository?.let { withContext(Dispatchers.IO) { it.signIn(email, password) } }
+            ?: run {
+                val ok = userPreferencesRepository.getStoredEmail() == email &&
+                    userPreferencesRepository.getStoredPassword() == password
+                if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
+            }
         if (result.success) onUserLoggedIn()
         return result
     }
 
-    fun signUp(email: String, password: String): AuthResult {
-        val result = authRepository?.signUp(email, password) ?: run {
-            userPreferencesRepository.setStoredCredentials(email, password)
-            AuthResult(true)
-        }
+    suspend fun signUp(email: String, password: String): AuthResult {
+        val result = authRepository?.let { withContext(Dispatchers.IO) { it.signUp(email, password) } }
+            ?: run {
+                userPreferencesRepository.setStoredCredentials(email, password)
+                AuthResult(true)
+            }
         if (result.success) onUserLoggedIn()
         return result
     }

@@ -3,9 +3,13 @@ package com.example.newspulse.data
 import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.domain.SavedArticlesRepository
 import com.example.newspulse.domain.model.Article
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.util.UUID
 
@@ -13,18 +17,15 @@ class SupabaseSavedArticlesRepository(
     private val client: SupabaseRestClient,
     private val userIdProvider: () -> String?
 ) : SavedArticlesRepository {
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val saved = MutableStateFlow<List<Article>>(emptyList())
     private val localArticleCache = mutableMapOf<String, Article>()
-
-    init {
-        refreshSaved()
-    }
 
     override fun getSavedArticles(): Flow<List<Article>> = saved.asStateFlow()
     override fun getSavedArticlesList(): List<Article> = saved.value
 
     override fun onUserChanged() {
-        refreshSaved()
+        ioScope.launch { runCatching { refreshSavedSuspend() } }
     }
 
     override fun clearState() {
@@ -32,43 +33,7 @@ class SupabaseSavedArticlesRepository(
         localArticleCache.clear()
     }
 
-    override fun saveArticle(article: Article) {
-        val userId = userIdProvider() ?: return
-        localArticleCache[article.id] = article
-
-        val articleStored = ensureArticleExists(article)
-        if (!articleStored) return
-
-        client.delete(
-            table = "saved_articles",
-            filters = mapOf(
-                "user_id" to "eq.$userId",
-                "article_id" to "eq.${article.id}"
-            )
-        )
-
-        val row = JSONObject()
-            .put("id", UUID.randomUUID().toString())
-            .put("user_id", userId)
-            .put("article_id", article.id)
-        client.insert(table = "saved_articles", body = row)
-        refreshSaved()
-    }
-
-    override fun removeArticle(article: Article) {
-        val userId = userIdProvider() ?: return
-        localArticleCache.remove(article.id)
-        client.delete(
-            table = "saved_articles",
-            filters = mapOf(
-                "user_id" to "eq.$userId",
-                "article_id" to "eq.${article.id}"
-            )
-        )
-        refreshSaved()
-    }
-
-    private fun refreshSaved() {
+    suspend fun refreshSavedSuspend() {
         val userId = userIdProvider() ?: run {
             saved.value = emptyList()
             return
@@ -91,7 +56,6 @@ class SupabaseSavedArticlesRepository(
         }
 
         val byId = mutableMapOf<String, Article>()
-
         val inClause = idsInOrder.joinToString(",") { "\"$it\"" }
         val articles = client.select(
             table = "articles",
@@ -121,11 +85,47 @@ class SupabaseSavedArticlesRepository(
         }
 
         byId.values.forEach { localArticleCache[it.id] = it }
-
         saved.value = idsInOrder.mapNotNull { byId[it] }
     }
 
-    private fun ensureArticleExists(article: Article): Boolean {
+    override fun saveArticle(article: Article) {
+        val userId = userIdProvider() ?: return
+        localArticleCache[article.id] = article
+        ioScope.launch {
+            val articleStored = ensureArticleExists(article)
+            if (!articleStored) return@launch
+            client.delete(
+                table = "saved_articles",
+                filters = mapOf(
+                    "user_id" to "eq.$userId",
+                    "article_id" to "eq.${article.id}"
+                )
+            )
+            val row = JSONObject()
+                .put("id", UUID.randomUUID().toString())
+                .put("user_id", userId)
+                .put("article_id", article.id)
+            client.insert(table = "saved_articles", body = row)
+            runCatching { refreshSavedSuspend() }
+        }
+    }
+
+    override fun removeArticle(article: Article) {
+        val userId = userIdProvider() ?: return
+        localArticleCache.remove(article.id)
+        ioScope.launch {
+            client.delete(
+                table = "saved_articles",
+                filters = mapOf(
+                    "user_id" to "eq.$userId",
+                    "article_id" to "eq.${article.id}"
+                )
+            )
+            runCatching { refreshSavedSuspend() }
+        }
+    }
+
+    private suspend fun ensureArticleExists(article: Article): Boolean {
         val body = JSONObject()
             .put("id", article.id)
             .put("title", article.title)

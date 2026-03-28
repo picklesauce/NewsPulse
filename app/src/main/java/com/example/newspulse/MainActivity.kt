@@ -4,8 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -51,6 +60,8 @@ import com.example.newspulse.ui.view.ReadingHistoryScreen
 import com.example.newspulse.ui.view.SavedArticlesScreen
 import com.example.newspulse.ui.view.SignUpScreen
 import com.example.newspulse.ui.view.TopicSelectionScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -110,15 +121,38 @@ class MainActivity : ComponentActivity() {
                     CompositionLocals.LocalViewModelFactory provides viewModelFactory
                 ) {
                     val navController = rememberNavController()
-                    val startDestination = remember {
-                        when {
-                            useSupabase && authRepository.getCurrentUserId() == null -> "login"
-                            model.isOnboardingComplete() -> "home"
-                            model.getUsername().isNotEmpty() -> "login"
-                            else -> "signup"
-                        }
+                    var supabaseReady by remember { mutableStateOf(!useSupabase) }
+                    var startDestination by remember {
+                        mutableStateOf(computeStartDestination(useSupabase, authRepository, model))
                     }
 
+                    LaunchedEffect(useSupabase) {
+                        if (!useSupabase) return@LaunchedEffect
+                        withContext(Dispatchers.IO) {
+                            runCatching {
+                                (interestsCatalogRepository as SupabaseInterestsCatalogRepository)
+                                    .preloadCatalogIfEmpty()
+                                (interestsRepository as SupabaseInterestsRepository).awaitInitialSync()
+                                (userPreferencesRepository as SupabaseUserPreferencesRepository)
+                                    .bootstrapProfile()
+                                (savedArticlesRepository as SupabaseSavedArticlesRepository)
+                                    .refreshSavedSuspend()
+                                (readingHistoryRepository as SupabaseReadingHistoryRepository)
+                                    .refreshFromRemote()
+                            }
+                        }
+                        startDestination = computeStartDestination(useSupabase, authRepository, model)
+                        supabaseReady = true
+                    }
+
+                    if (!supabaseReady) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
                     NavHost(
                         navController = navController,
                         startDestination = startDestination
@@ -177,6 +211,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+                    }
                 }
             }
         }
@@ -201,5 +236,16 @@ class MainActivity : ComponentActivity() {
             followedIdsProvider = { interestsRepo.getFollowedInterestIds() },
             diskCache = ArticleDiskCache(this)
         )
+    }
+
+    private fun computeStartDestination(
+        useSupabase: Boolean,
+        authRepository: AuthRepository,
+        model: NewsPulseModel
+    ): String = when {
+        useSupabase && authRepository.getCurrentUserId() == null -> "login"
+        model.isOnboardingComplete() -> "home"
+        model.getUsername().isNotEmpty() -> "login"
+        else -> "signup"
     }
 }

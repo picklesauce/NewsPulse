@@ -217,9 +217,11 @@ fun SignUpScreen(
                     ) {
                         Button(
                             onClick = {
-                                if (viewModel.signUp()) {
-                                    navController.navigate("topicSelection") {
-                                        popUpTo("signup") { inclusive = true }
+                                viewModel.signUp { success ->
+                                    if (success) {
+                                        navController.navigate("topicSelection") {
+                                            popUpTo("signup") { inclusive = true }
+                                        }
                                     }
                                 }
                             },
