@@ -6,6 +6,7 @@ import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.model.ReadingHistoryItem
 import com.example.newspulse.domain.model.UserProfile
 import com.example.newspulse.domain.util.ArticleDeduplicator
+import com.example.newspulse.domain.util.DiscoverCategoryRelevance
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
@@ -152,7 +153,8 @@ class NewsPulseModel(
         getFeed().filter { it.matches(query) }
 
     suspend fun searchArticlesByKeyword(keyword: String): List<Article> {
-        val results = ArticleDeduplicator.dedupePreservingOrder(newsRepository.searchByKeyword(keyword))
+        val raw = ArticleDeduplicator.dedupePreservingOrder(newsRepository.searchByKeyword(keyword))
+        val results = raw.filter { DiscoverCategoryRelevance.matchesDiscoverCategory(keyword, it) }
         results.forEach { discoverCache[it.id] = it }
         return results
     }
