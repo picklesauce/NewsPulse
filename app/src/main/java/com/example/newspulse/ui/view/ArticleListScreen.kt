@@ -165,10 +165,11 @@ fun ArticleListScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            val filterLabel = if (state.activeTopicFilters.isEmpty()) {
-                "All topics"
-            } else {
-                state.activeTopicFilters.sorted().joinToString(", ")
+            val topicFilters = state.activeTopicFilters
+            val filterLabel = when {
+                topicFilters == null -> "All topics"
+                topicFilters.isEmpty() -> "No topics selected"
+                else -> topicFilters.sorted().joinToString(", ")
             }
 
             OutlinedTextField(
@@ -211,7 +212,7 @@ fun ArticleListScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Checkbox(
-                                checked = state.activeTopicFilters.isEmpty(),
+                                checked = state.activeTopicFilters == null,
                                 onCheckedChange = null
                             )
                             Text("All topics", fontWeight = FontWeight.Medium)
@@ -221,7 +222,10 @@ fun ArticleListScreen(
                 )
                 HorizontalDivider()
                 state.selectedInterests.sorted().forEach { topic ->
-                    val isChecked = topic in state.activeTopicFilters
+                    val isChecked = when (val f = state.activeTopicFilters) {
+                        null -> true
+                        else -> topic in f
+                    }
                     DropdownMenuItem(
                         text = {
                             Row(
@@ -249,7 +253,10 @@ fun ArticleListScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             state.selectedInterests.forEach { topic ->
-                val isActive = state.activeTopicFilters.isEmpty() || topic in state.activeTopicFilters
+                val isActive = when (val f = state.activeTopicFilters) {
+                    null -> true
+                    else -> topic in f
+                }
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = if (isActive) Color(0xFF1C1B1F) else Color(0xFFF5F5F5),

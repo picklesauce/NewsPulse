@@ -106,17 +106,17 @@ fun LoginScreen(
                         modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                     )
 
-                    AuthFieldLabel("Email Address")
+                    AuthFieldLabel("Email/Username")
                     OutlinedTextField(
                         value = state.email,
                         onValueChange = { viewModel.updateEmail(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("you@example.com", color = HintGray) },
+                        placeholder = { Text("you@example.com or yourname", color = HintGray) },
                         leadingIcon = {
                             Icon(Icons.Default.Email, contentDescription = null, tint = HintGray)
                         },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         shape = RoundedCornerShape(12.dp),
                         colors = authFieldColors()
                     )

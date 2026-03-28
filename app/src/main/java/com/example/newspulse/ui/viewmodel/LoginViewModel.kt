@@ -30,7 +30,7 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
         val s = _uiState.value
         when {
             s.email.isBlank() -> {
-                _uiState.update { it.copy(errorMessage = "Please enter your email address") }
+                _uiState.update { it.copy(errorMessage = "Please enter your email or username") }
                 onResult(false)
             }
             s.password.isBlank() -> {

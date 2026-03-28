@@ -6,6 +6,7 @@ import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.model.ReadingHistoryItem
 import com.example.newspulse.domain.model.UserProfile
 import com.example.newspulse.domain.util.ArticleDeduplicator
+import com.example.newspulse.domain.util.DiscoverCategoryRelevance
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
@@ -88,8 +89,13 @@ class NewsPulseModel(
     suspend fun logIn(email: String, password: String): AuthResult {
         val result = authRepository?.let { withContext(Dispatchers.IO) { it.signIn(email, password) } }
             ?: run {
-                val ok = userPreferencesRepository.getStoredEmail() == email &&
-                    userPreferencesRepository.getStoredPassword() == password
+                val ident = email.trim()
+                val pwdOk = userPreferencesRepository.getStoredPassword() == password
+                val emailOk = userPreferencesRepository.getStoredEmail().equals(ident, ignoreCase = true)
+                val usernameOk =
+                    userPreferencesRepository.getUsername().isNotBlank() &&
+                        userPreferencesRepository.getUsername().equals(ident, ignoreCase = true)
+                val ok = pwdOk && (emailOk || usernameOk)
                 if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
             }
         if (result.success) onUserLoggedIn()
@@ -147,7 +153,8 @@ class NewsPulseModel(
         getFeed().filter { it.matches(query) }
 
     suspend fun searchArticlesByKeyword(keyword: String): List<Article> {
-        val results = ArticleDeduplicator.dedupePreservingOrder(newsRepository.searchByKeyword(keyword))
+        val raw = ArticleDeduplicator.dedupePreservingOrder(newsRepository.searchByKeyword(keyword))
+        val results = raw.filter { DiscoverCategoryRelevance.matchesDiscoverCategory(keyword, it) }
         results.forEach { discoverCache[it.id] = it }
         return results
     }
