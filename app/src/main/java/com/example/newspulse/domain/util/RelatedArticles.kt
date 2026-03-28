@@ -19,4 +19,5 @@ fun scoreRelatedArticles(baseArticle: Article, candidates: List<Article>): List<
             )
         )
         .map { it.first }
+        .let { ArticleDeduplicator.dedupePreservingOrder(it) }
 }

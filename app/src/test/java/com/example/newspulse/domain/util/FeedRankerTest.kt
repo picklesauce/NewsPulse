@@ -50,6 +50,53 @@ class FeedRankerTest {
     }
 
     @Test
+    fun balancedMerge_deduplicatesByCanonicalUrl_differentIds() {
+        val now = System.currentTimeMillis()
+        val a = Article(
+            id = "id-1",
+            title = "Story",
+            source = "Src",
+            url = "https://example.com/news/story?utm=1",
+            publishedAt = now
+        )
+        val b = Article(
+            id = "id-2",
+            title = "Story",
+            source = "Src",
+            url = "https://example.com/news/story",
+            publishedAt = now
+        )
+        val buckets = mapOf(
+            "Tech" to listOf(a),
+            "Sports" to listOf(b)
+        )
+        val merged = FeedRanker.balancedMerge(buckets)
+        assertEquals(1, merged.size)
+    }
+
+    @Test
+    fun balancedMerge_deduplicatesByTitleAndSource_differentIds() {
+        val now = System.currentTimeMillis()
+        val a = Article(
+            id = "a",
+            title = "Exclusive report",
+            source = "AP News",
+            url = "",
+            publishedAt = now
+        )
+        val b = Article(
+            id = "b",
+            title = "exclusive  report",
+            source = "ap news",
+            url = "",
+            publishedAt = now
+        )
+        val buckets = mapOf("Tech" to listOf(a), "Sports" to listOf(b))
+        val merged = FeedRanker.balancedMerge(buckets)
+        assertEquals(1, merged.size)
+    }
+
+    @Test
     fun balancedMerge_capsPerInterest() {
         val many = (1..20).map { article("a$it") }
         val merged = FeedRanker.balancedMerge(mapOf("Tech" to many))

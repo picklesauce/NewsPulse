@@ -38,7 +38,7 @@ object FeedRanker {
         val capped = buckets.mapValues { (_, articles) ->
             articles.sortedByDescending { it.publishedAt }.take(MAX_ARTICLES_PER_INTEREST)
         }
-        val seen = mutableSetOf<String>()
+        val deduper = ArticleDeduplicator.newState()
         val result = mutableListOf<Article>()
         val maxSize = capped.values.maxOf { it.size }
         val keys = capped.keys.toList()
@@ -48,7 +48,7 @@ object FeedRanker {
                 val list = capped[key] ?: continue
                 if (i < list.size) {
                     val article = list[i]
-                    if (seen.add(article.id)) {
+                    if (deduper.tryAccept(article)) {
                         result.add(article)
                     }
                 }
