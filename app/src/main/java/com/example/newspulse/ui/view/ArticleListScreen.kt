@@ -2,7 +2,6 @@ package com.example.newspulse.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -240,33 +239,6 @@ fun ArticleListScreen(
                             }
                         },
                         onClick = { viewModel.onToggleTopicFilter(topic) }
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            state.selectedInterests.forEach { topic ->
-                val isActive = when (val f = state.activeTopicFilters) {
-                    null -> true
-                    else -> topic in f
-                }
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isActive) Color(0xFF1C1B1F) else Color(0xFFF5F5F5),
-                    modifier = Modifier.clickable { viewModel.onToggleTopicFilter(topic) }
-                ) {
-                    Text(
-                        text = topic,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        fontSize = 14.sp,
-                        color = if (isActive) Color.White else Color(0xFF333333)
                     )
                 }
             }
