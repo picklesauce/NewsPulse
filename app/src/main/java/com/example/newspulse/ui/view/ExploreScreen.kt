@@ -84,6 +84,7 @@ private data class DiscoverCategory(
     val interestType: InterestType = InterestType.Topic
 )
 
+// Names must match `DiscoverCategories.NAMES` (home feed splits followed topics by this list).
 private val categories = listOf(
     DiscoverCategory("Technology", "Latest tech news & innovations", Icons.Outlined.Devices),
     DiscoverCategory("Finance", "Markets, stocks & economy", Icons.Outlined.AccountBalance),
@@ -116,13 +117,14 @@ fun ExploreScreen(
             isFollowed = state.isFollowed,
             onBack = { viewModel.onClearSelection() },
             onArticleClick = { id -> navController.navigate("articleDetail/$id") },
-            onFollow = { viewModel.onFollowTopic() }
+            onFollow = { viewModel.onFollowTopic() },
+            onUnfollow = { viewModel.onUnfollowTopic() }
         )
     } else {
         DiscoverBrowseView(
             onCategoryClick = { category ->
                 val interest = Interest(
-                    id = "discover-${category.name.lowercase().replace(" ", "-")}",
+                    id = "interest-${category.name.lowercase().replace(" ", "-")}",
                     type = category.interestType,
                     name = category.name
                 )
@@ -259,7 +261,8 @@ private fun DiscoverArticleView(
     isFollowed: Boolean,
     onBack: () -> Unit,
     onArticleClick: (String) -> Unit,
-    onFollow: () -> Unit
+    onFollow: () -> Unit,
+    onUnfollow: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -305,7 +308,7 @@ private fun DiscoverArticleView(
                     }
                     if (isFollowed) {
                         OutlinedButton(
-                            onClick = {},
+                            onClick = onUnfollow,
                             shape = RoundedCornerShape(20.dp),
                             border = BorderStroke(1.dp, Color(0xFF4CAF50)),
                             colors = ButtonDefaults.outlinedButtonColors(

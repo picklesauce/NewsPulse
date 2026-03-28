@@ -136,7 +136,8 @@ class FeedViewModelTest {
         // Assert: Articles should be loaded
         // When no interests are followed, all articles match (empty set = show all)
         assertTrue(state.articles.isNotEmpty()) // All articles should be shown
-        assertTrue(state.selectedInterests.isEmpty())
+        assertTrue(state.followedInterestNames.isEmpty())
+        assertTrue(state.followedCategoryNames.isEmpty())
         assertNull(state.emptyStateMessage) // Articles are present, so no empty message
     }
 
@@ -173,7 +174,7 @@ class FeedViewModelTest {
         // Assert: Articles matching the followed interest should be loaded
         val state = newViewModel.uiState.value
         assertTrue(state.articles.isNotEmpty())
-        assertTrue(state.selectedInterests.contains("Technology"))
+        assertTrue(state.followedCategoryNames.contains("Technology"))
         // Verify articles have the Technology interest
         state.articles.forEach { article ->
             assertTrue(article.interests.any { it.name == "Technology" })
@@ -197,7 +198,8 @@ class FeedViewModelTest {
         // Assert: Articles should match at least one of the followed interests
         val state = newViewModel.uiState.value
         assertTrue(state.articles.isNotEmpty())
-        assertEquals(setOf("Technology", "Business"), state.selectedInterests)
+        assertEquals(setOf("Technology", "Business"), state.followedCategoryNames)
+        assertTrue(state.followedInterestNames.isEmpty())
         state.articles.forEach { article ->
             val hasTech = article.interests.any { it.name == "Technology" }
             val hasBusiness = article.interests.any { it.name == "Business" }
@@ -298,8 +300,8 @@ class FeedViewModelTest {
 
         // Assert: State should be updated and articles should be re-filtered
         val state = newViewModel.uiState.value
-        assertFalse(state.selectedInterests.contains("Technology"))
-        assertTrue(state.selectedInterests.contains("Business"))
+        assertFalse(state.followedCategoryNames.contains("Technology"))
+        assertTrue(state.followedCategoryNames.contains("Business"))
         // Article count may decrease if some articles only matched Technology
         assertTrue(state.articles.size <= initialCount)
     }
@@ -320,11 +322,11 @@ class FeedViewModelTest {
         assertTrue(allCount > 0)
 
         // Act: Toggle Technology filter on
-        newViewModel.onToggleTopicFilter("Technology")
+        newViewModel.onToggleCategoryFilter("Technology")
 
         // Assert: Only Technology articles shown
         val state = newViewModel.uiState.value
-        assertEquals(setOf("Technology"), state.activeTopicFilters)
+        assertEquals(setOf("Technology"), state.activeCategoryFilters)
         state.articles.forEach { article ->
             assertTrue(article.interests.any { it.name == "Technology" })
         }
@@ -339,15 +341,15 @@ class FeedViewModelTest {
         val techInterest = model.getAllInterests().find { it.name == "Technology" }
         techInterest?.let { model.followInterest(it.id) }
         val newViewModel = FeedViewModel(model)
-        newViewModel.onToggleTopicFilter("Technology")
+        newViewModel.onToggleCategoryFilter("Technology")
         val filteredCount = newViewModel.uiState.value.articles.size
 
         // Act: Clear all filters
-        newViewModel.onClearTopicFilters()
+        newViewModel.onClearCategoryFilters()
 
         // Assert: All matching articles shown again
         val state = newViewModel.uiState.value
-        assertNull(state.activeTopicFilters)
+        assertNull(state.activeCategoryFilters)
         assertTrue(state.articles.size >= filteredCount)
     }
 
@@ -380,7 +382,10 @@ class FeedViewModelTest {
         // To test empty message, we need a scenario where articles are empty
         // This is hard to achieve with MockDB since all interests have articles
         // So we'll just verify the state structure is correct
-        assertTrue(stateWithArticles.selectedInterests.isNotEmpty())
+        assertTrue(
+            stateWithArticles.followedInterestNames.isNotEmpty() ||
+                stateWithArticles.followedCategoryNames.isNotEmpty()
+        )
     }
 
     /**
@@ -418,10 +423,10 @@ class FeedViewModelTest {
         assertTrue(allCount > 0)
 
         // Act: Toggle Technology on
-        newViewModel.onToggleTopicFilter("Technology")
+        newViewModel.onToggleCategoryFilter("Technology")
 
         val state = newViewModel.uiState.value
-        assertEquals(setOf("Technology"), state.activeTopicFilters)
+        assertEquals(setOf("Technology"), state.activeCategoryFilters)
         assertTrue(state.articles.size <= allCount)
         state.articles.forEach { article ->
             assertTrue(article.interests.any { it.name == "Technology" })
@@ -436,14 +441,14 @@ class FeedViewModelTest {
         val techInterest = model.getAllInterests().find { it.name == "Technology" }
         techInterest?.let { model.followInterest(it.id) }
         val newViewModel = FeedViewModel(model)
-        newViewModel.onToggleTopicFilter("Technology")
+        newViewModel.onToggleCategoryFilter("Technology")
         val filteredCount = newViewModel.uiState.value.articles.size
 
         // Act: Toggle Technology off
-        newViewModel.onToggleTopicFilter("Technology")
+        newViewModel.onToggleCategoryFilter("Technology")
 
         val state = newViewModel.uiState.value
-        assertEquals(emptySet<String>(), state.activeTopicFilters)
+        assertEquals(emptySet<String>(), state.activeCategoryFilters)
         assertTrue(state.articles.size >= filteredCount)
     }
 
@@ -458,14 +463,14 @@ class FeedViewModelTest {
         businessInterest?.let { model.followInterest(it.id) }
         val newViewModel = FeedViewModel(model)
         val allCount = newViewModel.uiState.value.articles.size
-        newViewModel.onToggleTopicFilter("Technology")
+        newViewModel.onToggleCategoryFilter("Technology")
         val filteredCount = newViewModel.uiState.value.articles.size
 
         // Act: Clear all filters
-        newViewModel.onClearTopicFilters()
+        newViewModel.onClearCategoryFilters()
 
         val state = newViewModel.uiState.value
-        assertNull(state.activeTopicFilters)
+        assertNull(state.activeCategoryFilters)
         assertEquals(allCount, state.articles.size)
         assertTrue(state.articles.size >= filteredCount)
     }

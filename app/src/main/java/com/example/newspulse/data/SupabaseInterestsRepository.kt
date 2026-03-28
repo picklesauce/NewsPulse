@@ -41,31 +41,35 @@ class SupabaseInterestsRepository(
     }
 
     override fun followInterest(id: String) {
+        ioScope.launch { followInterestSuspend(id) }
+    }
+
+    override suspend fun followInterestSuspend(id: String) {
         val userId = userIdProvider() ?: return
         synchronized(stateLock) {
             if (!followedIds.add(id)) return
         }
-        ioScope.launch {
-            val row = JSONObject()
-                .put("id", UUID.randomUUID().toString())
-                .put("user_id", userId)
-                .put("interest_id", id)
-            client.insert(table = "followed_interests", body = row)
-        }
+        val row = JSONObject()
+            .put("id", UUID.randomUUID().toString())
+            .put("user_id", userId)
+            .put("interest_id", id)
+        client.insert(table = "followed_interests", body = row)
     }
 
     override fun unfollowInterest(id: String) {
+        ioScope.launch { unfollowInterestSuspend(id) }
+    }
+
+    override suspend fun unfollowInterestSuspend(id: String) {
         val userId = userIdProvider() ?: return
         synchronized(stateLock) { followedIds.remove(id) }
-        ioScope.launch {
-            client.delete(
-                "followed_interests",
-                mapOf(
-                    "user_id" to "eq.$userId",
-                    "interest_id" to "eq.$id"
-                )
+        client.delete(
+            "followed_interests",
+            mapOf(
+                "user_id" to "eq.$userId",
+                "interest_id" to "eq.$id"
             )
-        }
+        )
     }
 
     override fun onUserChanged() {

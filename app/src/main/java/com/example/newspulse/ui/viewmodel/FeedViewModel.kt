@@ -2,6 +2,7 @@ package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.newspulse.domain.DiscoverCategories
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.Article
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,13 +20,21 @@ data class FeedUiState(
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val selectedInterests: Set<String> = emptySet(),
+    /** Followed topics that are not Discover grid categories (custom / catalog interests). */
+    val followedInterestNames: Set<String> = emptySet(),
+    /** Followed topics that match [DiscoverCategories.NAMES] (Discover page categories). */
+    val followedCategoryNames: Set<String> = emptySet(),
+    val interestFilterSectionTitle: String = "Interests",
+    val categoryFilterSectionTitle: String = "Categories",
     /**
-     * Topic filter chips: `null` = default (no filter; all chips shown as active).
-     * `emptySet()` = user cleared every chip (none active; still no topic filter on the feed).
-     * Non-empty = only those topics applied to the feed.
+     * Narrow feed to these followed interest names. `null` = all followed interests included (no narrowing).
+     * Non-empty = only articles tagged with at least one of these names.
      */
-    val activeTopicFilters: Set<String>? = null,
+    val activeInterestFilters: Set<String>? = null,
+    /**
+     * Narrow feed to these followed category names. `null` = all followed categories included.
+     */
+    val activeCategoryFilters: Set<String>? = null,
     /** Shown when articles list is empty; null when there are articles. */
     val emptyStateMessage: String? = null,
     /** True when the feed has very few articles; UI can show a hint. */
@@ -76,33 +85,62 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
         refreshArticles()
     }
 
-    fun onToggleTopicFilter(topic: String) {
-        val current = _uiState.value.activeTopicFilters
+    fun onToggleInterestFilter(topic: String) {
+        val current = _uiState.value.activeInterestFilters
         val updated = when {
             current == null -> setOf(topic)
             topic in current -> current - topic
             else -> current + topic
         }
-        _uiState.update { it.copy(activeTopicFilters = updated) }
+        _uiState.update { it.copy(activeInterestFilters = updated) }
         refreshArticles()
     }
 
-    fun onClearTopicFilters() {
-        _uiState.update { it.copy(activeTopicFilters = null) }
+    fun onClearInterestFilters() {
+        _uiState.update { it.copy(activeInterestFilters = null) }
+        refreshArticles()
+    }
+
+    fun onToggleCategoryFilter(topic: String) {
+        val current = _uiState.value.activeCategoryFilters
+        val updated = when {
+            current == null -> setOf(topic)
+            topic in current -> current - topic
+            else -> current + topic
+        }
+        _uiState.update { it.copy(activeCategoryFilters = updated) }
+        refreshArticles()
+    }
+
+    fun onClearCategoryFilters() {
+        _uiState.update { it.copy(activeCategoryFilters = null) }
+        refreshArticles()
+    }
+
+    /** Re-apply filters when returning to Home so the feed reflects follows from Discover. */
+    fun onResumeRefresh() {
         refreshArticles()
     }
 
     private fun refreshArticles() {
-        val interests = model.getFollowedInterestNames()
+        val allFollowed = model.getFollowedInterestNames()
+        val discover = DiscoverCategories.NAMES
+        val followedCategoryNames = allFollowed.filter { it in discover }.toSet()
+        val followedInterestNames = allFollowed.filter { it !in discover }.toSet()
+
         val fullFeed = model.getFeed()
-        var base = fullFeed.filter { it.matchesInterests(interests) }
+        var base = fullFeed.filter { it.matchesInterests(allFollowed) }
 
         val isFallback = base.isEmpty() && fullFeed.isNotEmpty()
         if (isFallback) base = fullFeed
 
-        val activeFilters = _uiState.value.activeTopicFilters
-        if (activeFilters != null && activeFilters.isNotEmpty()) {
-            base = base.filter { article -> article.topics.any { it in activeFilters } }
+        val interestFilters = _uiState.value.activeInterestFilters
+        val categoryFilters = _uiState.value.activeCategoryFilters
+        if (interestFilters != null && interestFilters.isNotEmpty()) {
+            base = base.filter { article -> article.topics.any { it in interestFilters } }
+        }
+        if (categoryFilters != null && categoryFilters.isNotEmpty()) {
+            base = base.filter { article -> article.topics.any { it in categoryFilters } }
         }
         val query = _uiState.value.searchQuery
         val articles = if (query.isBlank()) {
@@ -112,17 +150,21 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
         }
 
         val isThin = articles.size in 1..THIN_FEED_THRESHOLD
+        val hasActiveFilters =
+            (interestFilters != null && interestFilters.isNotEmpty()) ||
+                (categoryFilters != null && categoryFilters.isNotEmpty())
         val emptyMessage = when {
             articles.isNotEmpty() -> null
             query.isNotBlank() -> "No articles match your search"
-            activeFilters != null && activeFilters.isNotEmpty() -> "No articles for the selected topics"
-            interests.isEmpty() -> "Follow some topics to build your feed"
+            hasActiveFilters -> "No articles for the selected interests or categories"
+            allFollowed.isEmpty() -> "Follow some topics to build your feed"
             else -> "No articles yet — try adding more interests from Discover"
         }
         _uiState.update {
             it.copy(
                 articles = articles,
-                selectedInterests = interests,
+                followedInterestNames = followedInterestNames,
+                followedCategoryNames = followedCategoryNames,
                 emptyStateMessage = emptyMessage,
                 isCoverageThin = isThin,
                 isFallbackFeed = isFallback && articles.isNotEmpty()

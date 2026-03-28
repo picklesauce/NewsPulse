@@ -34,17 +34,20 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
     }
 
     fun onSelectInterest(interest: Interest) {
-        val followed = model.getFollowedInterestIds().contains(interest.id)
+        val canonical = model.getAllInterests()
+            .find { it.name.equals(interest.name, ignoreCase = true) }
+            ?: interest
+        val followed = model.getFollowedInterestIds().contains(canonical.id)
         _uiState.update {
             it.copy(
-                selectedInterest = interest,
+                selectedInterest = canonical,
                 articlesForSelected = emptyList(),
                 isLoading = true,
                 isFollowed = followed
             )
         }
         viewModelScope.launch {
-            val articles = model.searchArticlesByKeyword(interest.name)
+            val articles = model.searchArticlesByKeyword(canonical.name)
             _uiState.update {
                 it.copy(articlesForSelected = articles, isLoading = false)
             }
@@ -65,8 +68,24 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun onFollowTopic() {
         val interest = _uiState.value.selectedInterest ?: return
         if (_uiState.value.isFollowed) return
-        model.addCustomInterest(interest.name, interest.type)
-        _uiState.update { it.copy(isFollowed = true) }
+        viewModelScope.launch {
+            model.addCustomInterest(interest.name, interest.type)
+            model.forceRefreshNews()
+            _uiState.update { it.copy(isFollowed = true) }
+        }
+    }
+
+    fun onUnfollowTopic() {
+        val interest = _uiState.value.selectedInterest ?: return
+        if (!_uiState.value.isFollowed) return
+        viewModelScope.launch {
+            val id = model.getAllInterests()
+                .find { it.name.equals(interest.name, ignoreCase = true) }?.id
+                ?: "interest-${interest.name.lowercase().replace(" ", "-")}"
+            model.unfollowInterestSuspend(id)
+            model.forceRefreshNews()
+            _uiState.update { it.copy(isFollowed = false) }
+        }
     }
 
     fun onSetTypeFilter(type: InterestType?) {

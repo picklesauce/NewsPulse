@@ -9,7 +9,7 @@ class MockInterestsCatalogRepository : InterestsCatalogRepository {
 
     override fun getAllInterests(): List<Interest> = MockDB.interests + customInterests
 
-    override fun addCustomInterest(name: String, type: InterestType): Interest {
+    override suspend fun addCustomInterest(name: String, type: InterestType): Interest {
         val all = getAllInterests()
         val existing = all.find { it.name.equals(name, ignoreCase = true) }
         if (existing != null) return existing

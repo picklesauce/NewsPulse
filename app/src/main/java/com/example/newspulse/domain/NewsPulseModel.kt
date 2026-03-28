@@ -48,11 +48,15 @@ class NewsPulseModel(
     fun getAllInterests(): List<Interest> =
         interestsCatalogRepository.getAllInterests()
 
-    /** Creates a custom interest, adds it to the catalog, and auto-follows it. */
-    fun addCustomInterest(name: String, type: InterestType): Interest {
+    /** Creates a custom interest in the catalog, persists it, then follows it (awaited for Supabase). */
+    suspend fun addCustomInterest(name: String, type: InterestType): Interest {
         val interest = interestsCatalogRepository.addCustomInterest(name, type)
-        interestsRepository.followInterest(interest.id)
+        interestsRepository.followInterestSuspend(interest.id)
         return interest
+    }
+
+    suspend fun unfollowInterestSuspend(id: String) {
+        interestsRepository.unfollowInterestSuspend(id)
     }
 
     fun followInterest(id: String) {

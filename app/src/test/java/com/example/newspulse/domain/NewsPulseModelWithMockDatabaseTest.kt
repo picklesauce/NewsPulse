@@ -4,6 +4,7 @@ import com.example.newspulse.data.DatabaseInterface
 import com.example.newspulse.data.MockDatabase
 import com.example.newspulse.data.mock.FakeUserPreferencesRepository
 import com.example.newspulse.domain.model.Article
+import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.ReadingHistoryItem
 import kotlinx.coroutines.flow.Flow
@@ -138,6 +139,13 @@ class NewsPulseModelWithMockDatabaseTest {
 
     private class DatabaseBackedInterestsCatalogRepository(private val db: DatabaseInterface) : InterestsCatalogRepository {
         override fun getAllInterests(): List<Interest> = runBlocking { db.getAllInterests() }
+
+        override suspend fun addCustomInterest(name: String, type: InterestType): Interest =
+            Interest(
+                id = "interest-${name.lowercase().replace(" ", "-")}",
+                type = type,
+                name = name
+            )
     }
 
     private class DatabaseBackedInterestsRepository(

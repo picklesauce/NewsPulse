@@ -4,16 +4,11 @@ import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.domain.InterestsCatalogRepository
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class SupabaseInterestsCatalogRepository(
     private val client: SupabaseRestClient
 ) : InterestsCatalogRepository {
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var cache: MutableList<Interest> = mutableListOf()
     private val cacheLock = Any()
 
@@ -46,7 +41,7 @@ class SupabaseInterestsCatalogRepository(
         }
     }
 
-    override fun addCustomInterest(name: String, type: InterestType): Interest {
+    override suspend fun addCustomInterest(name: String, type: InterestType): Interest {
         val existing = getAllInterests().find { it.name.equals(name, ignoreCase = true) }
         if (existing != null) return existing
 
@@ -59,11 +54,10 @@ class SupabaseInterestsCatalogRepository(
             .put("id", interest.id)
             .put("type", type.name)
             .put("name", name)
-        ioScope.launch {
-            client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
-        }
+        client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
         synchronized(cacheLock) {
-            if (cache.none { it.id == interest.id }) cache.add(interest)
+            val idx = cache.indexOfFirst { it.id == interest.id }
+            if (idx >= 0) cache[idx] = interest else if (cache.none { it.id == interest.id }) cache.add(interest)
         }
         return interest
     }
