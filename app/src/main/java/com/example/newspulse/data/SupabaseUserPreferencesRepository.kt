@@ -5,6 +5,10 @@ import android.content.SharedPreferences
 import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.data.remote.SupabaseUserSession
 import com.example.newspulse.domain.UserPreferencesRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -16,64 +20,27 @@ class SupabaseUserPreferencesRepository(
     private val userIdProvider: () -> String?
 ) : UserPreferencesRepository {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    init {
-        ensureUserProfileExists()
-    }
-
-    override fun getUsername(): String {
-        val remote = getRemoteProfileField("username")
-        if (remote.isNotBlank()) {
-            prefs.edit().putString(KEY_USERNAME, remote).apply()
-            return remote
-        }
-        return prefs.getString(KEY_USERNAME, "") ?: ""
-    }
-
-    override fun setUsername(username: String) {
-        prefs.edit().putString(KEY_USERNAME, username).apply()
-        upsertProfileFields(JSONObject().put("username", username))
-    }
-
-    override fun getMemberSince(): String {
-        val remote = getRemoteProfileField("member_since")
-        if (remote.isNotBlank()) {
-            prefs.edit().putString(KEY_MEMBER_SINCE_STR, remote).apply()
-            return remote
-        }
-        val local = prefs.getString(KEY_MEMBER_SINCE_STR, null)
-        if (!local.isNullOrBlank()) return local
-        return "Feb 2026"
-    }
-
-    override fun setMemberSinceIfFirstTime() {
-        val existing = getMemberSince()
-        if (existing != "Feb 2026" || prefs.contains(KEY_MEMBER_SINCE_STR)) return
-        val now = SimpleDateFormat("MMM yyyy", Locale.US).format(Date())
-        prefs.edit().putString(KEY_MEMBER_SINCE_STR, now).apply()
-        upsertProfileFields(JSONObject().put("member_since", now))
-    }
-
-    override fun getStoredEmail(): String = prefs.getString(KEY_STORED_EMAIL, "") ?: ""
-
-    override fun getStoredPassword(): String = prefs.getString(KEY_STORED_PASSWORD, "") ?: ""
-
-    override fun setStoredCredentials(email: String, password: String) {
-        prefs.edit()
-            .putString(KEY_STORED_EMAIL, email)
-            .putString(KEY_STORED_PASSWORD, password)
-            .apply()
-    }
-
-    private fun ensureUserProfileExists() {
+    /** Ensures remote profile row exists and caches username / member_since into prefs. */
+    suspend fun bootstrapProfile() {
         val userId = userIdProvider() ?: return
         val rows = client.select(
             table = "user_profiles",
-            columns = "user_id",
+            columns = "user_id,username,member_since",
             filters = mapOf("user_id" to "eq.$userId"),
             limit = 1
         )
-        if (rows.length() > 0) return
+        if (rows.length() > 0) {
+            val o = rows.optJSONObject(0)
+            val u = o?.optString("username").orEmpty()
+            val m = o?.optString("member_since").orEmpty()
+            prefs.edit().apply {
+                if (u.isNotBlank()) putString(KEY_USERNAME, u)
+                if (m.isNotBlank()) putString(KEY_MEMBER_SINCE_STR, m)
+            }.apply()
+            return
+        }
         val username = prefs.getString(KEY_USERNAME, "").orEmpty().ifBlank { "user_${userId.take(8)}" }
         val memberSince = prefs.getString(KEY_MEMBER_SINCE_STR, null)
             ?: SupabaseUserSession.currentMemberSince().also {
@@ -92,19 +59,43 @@ class SupabaseUserPreferencesRepository(
         )
     }
 
-    private fun getRemoteProfileField(field: String): String {
-        val userId = userIdProvider() ?: return ""
-        val rows = client.select(
-            table = "user_profiles",
-            columns = field,
-            filters = mapOf("user_id" to "eq.$userId"),
-            limit = 1
-        )
-        if (rows.length() == 0) return ""
-        return rows.optJSONObject(0)?.optString(field).orEmpty()
+    override fun getUsername(): String = prefs.getString(KEY_USERNAME, "") ?: ""
+
+    override fun setUsername(username: String) {
+        prefs.edit().putString(KEY_USERNAME, username).apply()
+        ioScope.launch {
+            upsertProfileFields(JSONObject().put("username", username))
+        }
     }
 
-    private fun upsertProfileFields(fields: JSONObject) {
+    override fun getMemberSince(): String {
+        val local = prefs.getString(KEY_MEMBER_SINCE_STR, null)
+        if (!local.isNullOrBlank()) return local
+        return "Feb 2026"
+    }
+
+    override fun setMemberSinceIfFirstTime() {
+        val existing = getMemberSince()
+        if (existing != "Feb 2026" || prefs.contains(KEY_MEMBER_SINCE_STR)) return
+        val now = SimpleDateFormat("MMM yyyy", Locale.US).format(Date())
+        prefs.edit().putString(KEY_MEMBER_SINCE_STR, now).apply()
+        ioScope.launch {
+            upsertProfileFields(JSONObject().put("member_since", now))
+        }
+    }
+
+    override fun getStoredEmail(): String = prefs.getString(KEY_STORED_EMAIL, "") ?: ""
+
+    override fun getStoredPassword(): String = prefs.getString(KEY_STORED_PASSWORD, "") ?: ""
+
+    override fun setStoredCredentials(email: String, password: String) {
+        prefs.edit()
+            .putString(KEY_STORED_EMAIL, email)
+            .putString(KEY_STORED_PASSWORD, password)
+            .apply()
+    }
+
+    private suspend fun upsertProfileFields(fields: JSONObject) {
         val userId = userIdProvider() ?: return
         val body = JSONObject().put("user_id", userId)
         fields.keys().forEach { key -> body.put(key, fields.get(key)) }

@@ -1,7 +1,9 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.newspulse.domain.NewsPulseModel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,35 +31,37 @@ class SignUpViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun togglePasswordVisible() = _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
     fun toggleConfirmPasswordVisible() = _uiState.update { it.copy(confirmPasswordVisible = !it.confirmPasswordVisible) }
 
-    /** Returns true if validation passes and the account was created. */
-    fun signUp(): Boolean {
+    /** Validates locally, then creates account off the UI thread; [onResult] on main thread. */
+    fun signUp(onResult: (Boolean) -> Unit) {
         val s = _uiState.value
-        return when {
+        when {
             s.username.isBlank() -> {
                 _uiState.update { it.copy(errorMessage = "Please enter a username") }
-                false
+                onResult(false)
             }
             s.email.isBlank() || !s.email.contains("@") -> {
                 _uiState.update { it.copy(errorMessage = "Please enter a valid email address") }
-                false
+                onResult(false)
             }
             s.password.length < 6 -> {
                 _uiState.update { it.copy(errorMessage = "Password must be at least 6 characters") }
-                false
+                onResult(false)
             }
             s.password != s.confirmPassword -> {
                 _uiState.update { it.copy(errorMessage = "Passwords do not match") }
-                false
+                onResult(false)
             }
             else -> {
-                val result = model.signUp(s.email.trim(), s.password)
-                if (!result.success) {
-                    _uiState.update { it.copy(errorMessage = result.errorMessage ?: "Sign up failed") }
-                    false
-                } else {
-                    model.setUsername(s.username)
-                    model.setMemberSinceIfFirstTime()
-                    true
+                viewModelScope.launch {
+                    val result = model.signUp(s.email.trim(), s.password)
+                    if (!result.success) {
+                        _uiState.update { it.copy(errorMessage = result.errorMessage ?: "Sign up failed") }
+                        onResult(false)
+                    } else {
+                        model.setUsername(s.username)
+                        model.setMemberSinceIfFirstTime()
+                        onResult(true)
+                    }
                 }
             }
         }

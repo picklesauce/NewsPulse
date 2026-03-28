@@ -4,14 +4,26 @@ import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.domain.InterestsCatalogRepository
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class SupabaseInterestsCatalogRepository(
     private val client: SupabaseRestClient
 ) : InterestsCatalogRepository {
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var cache: MutableList<Interest> = mutableListOf()
+    private val cacheLock = Any()
 
-    override fun getAllInterests(): List<Interest> {
-        if (cache.isNotEmpty()) return cache.toList()
+    override fun getAllInterests(): List<Interest> = synchronized(cacheLock) { cache.toList() }
+
+    /** Fetches interests from Supabase if cache is empty; safe to call from IO during bootstrap. */
+    suspend fun preloadCatalogIfEmpty() {
+        synchronized(cacheLock) {
+            if (cache.isNotEmpty()) return
+        }
         val rows = client.select(
             table = "interests",
             columns = "id,type,name",
@@ -29,8 +41,9 @@ class SupabaseInterestsCatalogRepository(
                 parsed.add(Interest(id = id, type = type, name = name))
             }
         }
-        cache = parsed
-        return cache.toList()
+        synchronized(cacheLock) {
+            if (cache.isEmpty()) cache = parsed
+        }
     }
 
     override fun addCustomInterest(name: String, type: InterestType): Interest {
@@ -42,12 +55,16 @@ class SupabaseInterestsCatalogRepository(
             type = type,
             name = name
         )
-        val body = org.json.JSONObject()
+        val body = JSONObject()
             .put("id", interest.id)
             .put("type", type.name)
             .put("name", name)
-        client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
-        cache.add(interest)
+        ioScope.launch {
+            client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
+        }
+        synchronized(cacheLock) {
+            if (cache.none { it.id == interest.id }) cache.add(interest)
+        }
         return interest
     }
 }

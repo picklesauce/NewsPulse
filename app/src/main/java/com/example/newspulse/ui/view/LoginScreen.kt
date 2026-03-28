@@ -173,11 +173,13 @@ fun LoginScreen(
 
                     Button(
                         onClick = {
-                            if (viewModel.logIn()) {
-                                navController.navigate(
-                                    if (viewModel.isOnboardingComplete()) "home" else "topicSelection"
-                                ) {
-                                    popUpTo("login") { inclusive = true }
+                            viewModel.logIn { success ->
+                                if (success) {
+                                    navController.navigate(
+                                        if (viewModel.isOnboardingComplete()) "home" else "topicSelection"
+                                    ) {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 }
                             }
                         },

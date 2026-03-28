@@ -6,8 +6,8 @@ data class AuthResult(
 )
 
 interface AuthRepository {
-    fun signUp(email: String, password: String): AuthResult
-    fun signIn(email: String, password: String): AuthResult
+    suspend fun signUp(email: String, password: String): AuthResult
+    suspend fun signIn(email: String, password: String): AuthResult
     fun signOut()
     fun getCurrentUserId(): String?
 }

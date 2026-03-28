@@ -12,6 +12,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 internal class LoginViewModelTest {
 
@@ -54,16 +56,18 @@ internal class LoginViewModelTest {
     @Test
     fun logIn_withBlankEmail_returnsFalseAndShowsError() {
         viewModel.updatePassword("any")
-        val result = viewModel.logIn()
-        assertFalse(result)
+        var result: Boolean? = null
+        viewModel.logIn { result = it }
+        assertEquals(false, result)
         assertEquals("Please enter your email address", viewModel.uiState.value.errorMessage)
     }
 
     @Test
     fun logIn_withBlankPassword_returnsFalseAndShowsError() {
         viewModel.updateEmail("a@b.com")
-        val result = viewModel.logIn()
-        assertFalse(result)
+        var result: Boolean? = null
+        viewModel.logIn { result = it }
+        assertEquals(false, result)
         assertEquals("Please enter your password", viewModel.uiState.value.errorMessage)
     }
 
@@ -71,7 +75,13 @@ internal class LoginViewModelTest {
     fun logIn_withWrongCredentials_returnsFalseAndShowsError() {
         viewModel.updateEmail("wrong@example.com")
         viewModel.updatePassword("wrongpass")
-        val result = viewModel.logIn()
+        val latch = CountDownLatch(1)
+        var result = true
+        viewModel.logIn {
+            result = it
+            latch.countDown()
+        }
+        assertTrue(latch.await(5, TimeUnit.SECONDS))
         assertFalse(result)
         assertEquals("Invalid email or password", viewModel.uiState.value.errorMessage)
     }
@@ -80,7 +90,13 @@ internal class LoginViewModelTest {
     fun logIn_withMatchingCredentials_returnsTrue() {
         viewModel.updateEmail("preview@example.com")
         viewModel.updatePassword("preview")
-        val result = viewModel.logIn()
+        val latch = CountDownLatch(1)
+        var result = false
+        viewModel.logIn {
+            result = it
+            latch.countDown()
+        }
+        assertTrue(latch.await(5, TimeUnit.SECONDS))
         assertTrue(result)
         assertEquals(null, viewModel.uiState.value.errorMessage)
     }

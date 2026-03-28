@@ -7,12 +7,12 @@ import com.example.newspulse.domain.UserPreferencesRepository
 class LocalAuthRepository(
     private val userPreferencesRepository: UserPreferencesRepository
 ) : AuthRepository {
-    override fun signUp(email: String, password: String): AuthResult {
+    override suspend fun signUp(email: String, password: String): AuthResult {
         userPreferencesRepository.setStoredCredentials(email, password)
         return AuthResult(success = true)
     }
 
-    override fun signIn(email: String, password: String): AuthResult {
+    override suspend fun signIn(email: String, password: String): AuthResult {
         val ok = userPreferencesRepository.getStoredEmail() == email &&
             userPreferencesRepository.getStoredPassword() == password
         return if (ok) AuthResult(success = true) else AuthResult(false, "Invalid email or password")
