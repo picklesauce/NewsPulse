@@ -13,4 +13,7 @@ interface UserPreferencesRepository {
 
     /** Reloads profile from remote after auth identity changes (e.g. Google sign-in). No-op for local-only prefs. */
     suspend fun refreshProfileFromRemote() {}
+
+    /** Clears cached display profile so the next remote load matches the logged-in account. */
+    fun clearCachedProfileForAccountSwitch() {}
 }

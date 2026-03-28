@@ -261,6 +261,23 @@ fun LoginScreen(
                         )
                     }
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = { navController.navigate("signup") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, FieldBorder)
+                    ) {
+                        Text(
+                            text = "Sign up",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = LabelDark
+                        )
+                    }
                 }
             }
 

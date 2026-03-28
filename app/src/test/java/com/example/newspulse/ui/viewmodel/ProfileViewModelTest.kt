@@ -36,10 +36,10 @@ internal class ProfileViewModelTest {
     }
 
     @Test
-    fun username_fallsBackWhenEmpty() {
+    fun username_emptyWhenModelEmpty() {
         model.setUsername("")
         val vm = ProfileViewModel(model)
-        assertEquals("username123", vm.username)
+        assertEquals("", vm.username)
     }
 
     @Test

@@ -3,8 +3,10 @@ package com.example.newspulse.data
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.newspulse.data.remote.SupabaseRestClient
+import com.example.newspulse.data.remote.SupabaseSdkHolder
 import com.example.newspulse.data.remote.SupabaseUserSession
 import com.example.newspulse.domain.UserPreferencesRepository
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,8 +25,23 @@ class SupabaseUserPreferencesRepository(
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /**
+     * Mirrors [KEY_USERNAME] synchronously — SharedPreferences.apply() can lag, so Profile read
+     * right after bootstrap still saw "" and showed "—".
+     */
+    @Volatile
+    private var usernameMemory: String? = null
+
     override suspend fun refreshProfileFromRemote() {
         withContext(Dispatchers.IO) { bootstrapProfile() }
+    }
+
+    override fun clearCachedProfileForAccountSwitch() {
+        usernameMemory = null
+        prefs.edit()
+            .remove(KEY_USERNAME)
+            .remove(KEY_MEMBER_SINCE_STR)
+            .commit()
     }
 
     /** Ensures remote profile row exists and caches username / member_since into prefs. */
@@ -38,15 +55,29 @@ class SupabaseUserPreferencesRepository(
         )
         if (rows.length() > 0) {
             val o = rows.optJSONObject(0)
-            val u = o?.optString("username").orEmpty()
+            var u = o?.optString("username").orEmpty()
             val m = o?.optString("member_since").orEmpty()
+            if (u.isBlank()) {
+                u = fallbackDisplayNameFromAuthEmail().orEmpty()
+                if (u.isNotBlank()) {
+                    upsertProfileFields(JSONObject().put("username", u))
+                }
+            }
+            if (u.isBlank()) {
+                u = "user_${userId.take(8)}"
+                upsertProfileFields(JSONObject().put("username", u))
+            }
+            usernameMemory = u
             prefs.edit().apply {
-                if (u.isNotBlank()) putString(KEY_USERNAME, u)
+                putString(KEY_USERNAME, u)
                 if (m.isNotBlank()) putString(KEY_MEMBER_SINCE_STR, m)
-            }.apply()
+            }.commit()
             return
         }
-        val username = prefs.getString(KEY_USERNAME, "").orEmpty().ifBlank { "user_${userId.take(8)}" }
+        val username = prefs.getString(KEY_USERNAME, "").orEmpty()
+            .takeIf { it.isNotBlank() }
+            ?: fallbackDisplayNameFromAuthEmail()
+            ?: "user_${userId.take(8)}"
         val memberSince = prefs.getString(KEY_MEMBER_SINCE_STR, null)
             ?: SupabaseUserSession.currentMemberSince().also {
                 prefs.edit().putString(KEY_MEMBER_SINCE_STR, it).apply()
@@ -56,18 +87,40 @@ class SupabaseUserPreferencesRepository(
             .put("username", username)
             .put("member_since", memberSince)
             .put("onboarding_complete", false)
-        client.insert(
+        val ok = client.insert(
             table = "user_profiles",
             body = body,
             onConflict = "user_id",
             upsert = true
         )
+        if (ok) {
+            usernameMemory = username
+            prefs.edit().apply {
+                putString(KEY_USERNAME, username)
+                putString(KEY_MEMBER_SINCE_STR, memberSince)
+            }.commit()
+        }
     }
 
-    override fun getUsername(): String = prefs.getString(KEY_USERNAME, "") ?: ""
+    /** Local part of Supabase Auth email when OAuth session exists (e.g. Google). */
+    private fun fallbackDisplayNameFromAuthEmail(): String? {
+        val email = SupabaseSdkHolder.client?.auth?.currentSessionOrNull()?.user?.email
+            ?: return null
+        if (email.endsWith("@placeholder.local")) return null
+        val local = email.substringBefore("@").trim()
+        return local.takeIf { it.isNotBlank() }
+    }
+
+    override fun getUsername(): String {
+        usernameMemory?.let { return it }
+        val fromPrefs = prefs.getString(KEY_USERNAME, "").orEmpty()
+        if (fromPrefs.isNotBlank()) usernameMemory = fromPrefs
+        return fromPrefs
+    }
 
     override fun setUsername(username: String) {
-        prefs.edit().putString(KEY_USERNAME, username).apply()
+        usernameMemory = username
+        prefs.edit().putString(KEY_USERNAME, username).commit()
         ioScope.launch {
             upsertProfileFields(JSONObject().put("username", username))
         }

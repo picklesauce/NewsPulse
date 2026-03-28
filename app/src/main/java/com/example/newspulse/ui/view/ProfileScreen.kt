@@ -52,7 +52,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
     LaunchedEffect(viewModel.sessionIdentity()) {
-        viewModel.refreshFromModel()
+        viewModel.reloadProfileFromRemote()
     }
     val username = viewModel.username
     val memberSince = viewModel.memberSince
@@ -112,7 +112,7 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = username,
+                        text = username.ifBlank { "—" },
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1C1B1F)

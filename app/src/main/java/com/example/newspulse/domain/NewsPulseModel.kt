@@ -5,6 +5,7 @@ import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.model.ReadingHistoryItem
 import com.example.newspulse.domain.model.UserProfile
+import com.example.newspulse.data.SupabaseInterestsRepository
 import com.example.newspulse.domain.util.ArticleDeduplicator
 import com.example.newspulse.domain.util.DiscoverCategoryRelevance
 import com.example.newspulse.domain.util.scoreRelatedArticles
@@ -60,6 +61,11 @@ class NewsPulseModel(
         interestsRepository.unfollowInterestSuspend(id)
     }
 
+    /** Await Supabase (or mock) persistence — same path as toggling interests on the Interests screen. */
+    suspend fun followInterestSuspend(id: String) {
+        interestsRepository.followInterestSuspend(id)
+    }
+
     fun followInterest(id: String) {
         interestsRepository.followInterest(id)
     }
@@ -93,6 +99,11 @@ class NewsPulseModel(
         userPreferencesRepository.setUsername(username)
     }
 
+    /** Re-load [user_profiles] into prefs (e.g. Profile screen after Google sign-in). */
+    suspend fun refreshProfileDisplayFromRemote() {
+        userPreferencesRepository.refreshProfileFromRemote()
+    }
+
     suspend fun signInWithGoogle(): AuthResult =
         authRepository?.let { withContext(Dispatchers.IO) { it.signInWithGoogle() } }
             ?: AuthResult(false, "Google sign-in is not available")
@@ -103,17 +114,23 @@ class NewsPulseModel(
     suspend fun syncSupabaseAuthSessionToApp(): Boolean {
         val ok = authRepository?.syncSupabaseAuthSessionToApp() == true
         if (ok) {
+            pullRemoteUserStateAfterAuth()
             onUserLoggedIn()
-            // Display name = local part of Supabase Auth email (matches user_profiles / Google).
-            authRepository?.getAuthenticatedUserEmail()?.let { email ->
-                val local = email.trim().substringBefore("@").trim()
-                if (local.isNotBlank() && !email.endsWith("@placeholder.local")) {
-                    userPreferencesRepository.setUsername(local)
-                }
-            }
-            userPreferencesRepository.refreshProfileFromRemote()
         }
         return ok
+    }
+
+    /**
+     * Loads followed interests, onboarding flag, and profile (username) from Supabase for the
+     * current session. Call after any successful sign-in so navigation and UI see DB state
+     * (avoids asking for topic selection when already completed).
+     */
+    private suspend fun pullRemoteUserStateAfterAuth() {
+        userPreferencesRepository.clearCachedProfileForAccountSwitch()
+        withContext(Dispatchers.IO) {
+            (interestsRepository as? SupabaseInterestsRepository)?.awaitInitialSync()
+            userPreferencesRepository.refreshProfileFromRemote()
+        }
     }
 
     suspend fun logIn(email: String, password: String): AuthResult {
@@ -128,7 +145,12 @@ class NewsPulseModel(
                 val ok = pwdOk && (emailOk || usernameOk)
                 if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
             }
-        if (result.success) onUserLoggedIn()
+        if (result.success) {
+            if (authRepository != null) {
+                pullRemoteUserStateAfterAuth()
+            }
+            onUserLoggedIn()
+        }
         return result
     }
 
@@ -138,12 +160,19 @@ class NewsPulseModel(
                 userPreferencesRepository.setStoredCredentials(email, password)
                 AuthResult(true)
             }
-        if (result.success) onUserLoggedIn()
+        if (result.success) {
+            if (authRepository != null) {
+                pullRemoteUserStateAfterAuth()
+            }
+            onUserLoggedIn()
+        }
         return result
     }
 
     fun signOut() {
         authRepository?.signOut()
+        userPreferencesRepository.clearCachedProfileForAccountSwitch()
+        interestsRepository.onUserChanged()
         savedArticlesRepository.clearState()
     }
 

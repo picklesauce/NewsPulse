@@ -169,18 +169,16 @@ class SupabaseAuthRepository(
         session.clear()
     }
 
-    override fun getCurrentUserId(): String? = session.userId
-
-    override fun getAuthenticatedUserEmail(): String? =
-        supabase.auth.currentSessionOrNull()?.user?.email
+    override fun getCurrentUserId(): String? =
+        session.userId ?: supabase.auth.currentSessionOrNull()?.user?.id?.toString()
 
     private suspend fun ensureUserProfile(userId: String, email: String) {
+        // Use user JWT when present (Google / Supabase Auth). Anon-only calls fail typical RLS on user_profiles.
         val existing = client.select(
             table = "user_profiles",
             columns = "user_id",
             filters = mapOf("user_id" to "eq.$userId"),
-            limit = 1,
-            useUserAuth = false
+            limit = 1
         )
         if (existing.length() > 0) return
 
@@ -191,10 +189,6 @@ class SupabaseAuthRepository(
             .put("username", username)
             .put("member_since", memberSince)
             .put("onboarding_complete", false)
-        client.insert(
-            table = "user_profiles",
-            body = body,
-            useUserAuth = false
-        )
+        client.insert(table = "user_profiles", body = body)
     }
 }

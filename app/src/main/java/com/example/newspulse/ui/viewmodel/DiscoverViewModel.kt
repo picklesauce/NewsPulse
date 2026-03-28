@@ -69,9 +69,17 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
         val interest = _uiState.value.selectedInterest ?: return
         if (_uiState.value.isFollowed) return
         viewModelScope.launch {
-            model.addCustomInterest(interest.name, interest.type)
+            val canonical = model.getAllInterests()
+                .find { it.name.equals(interest.name, ignoreCase = true) }
+            val targetId = if (canonical != null) {
+                model.followInterestSuspend(canonical.id)
+                canonical.id
+            } else {
+                model.addCustomInterest(interest.name, interest.type).id
+            }
+            val nowFollowed = model.getFollowedInterestIds().contains(targetId)
             model.forceRefreshNews()
-            _uiState.update { it.copy(isFollowed = true) }
+            _uiState.update { it.copy(isFollowed = nowFollowed) }
         }
     }
 

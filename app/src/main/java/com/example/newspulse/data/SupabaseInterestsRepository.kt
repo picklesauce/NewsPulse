@@ -53,7 +53,10 @@ class SupabaseInterestsRepository(
             .put("id", UUID.randomUUID().toString())
             .put("user_id", userId)
             .put("interest_id", id)
-        client.insert(table = "followed_interests", body = row)
+        val ok = client.insert(table = "followed_interests", body = row)
+        if (!ok) {
+            synchronized(stateLock) { followedIds.remove(id) }
+        }
     }
 
     override fun unfollowInterest(id: String) {

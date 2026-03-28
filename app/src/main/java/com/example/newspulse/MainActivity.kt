@@ -38,6 +38,7 @@ import com.example.newspulse.data.remote.EventRegistryApi
 import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.data.remote.SupabaseSdkHolder
 import com.example.newspulse.data.remote.SupabaseUserSession
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.handleDeeplinks
 import com.example.newspulse.domain.AuthRepository
 import com.example.newspulse.domain.InterestsCatalogRepository
@@ -95,21 +96,31 @@ class MainActivity : ComponentActivity() {
             val supabaseSdk = SupabaseSdkHolder.init(
                 supabaseUrl = BuildConfig.SUPABASE_URL,
                 supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY
-            )
+            ) ?: error("Supabase SDK init failed")
+            // Prefer JWT from the Auth SDK (always fresh after refresh / OAuth); fall back to cached session.
+            // Using only prefs missed refreshes and caused anon-key REST calls → RLS blocked writes/reads for Google.
+            val resolveAccessToken: () -> String? = {
+                val t = supabaseSdk.auth.currentSessionOrNull()?.accessToken
+                if (!t.isNullOrBlank()) t else userSession.accessToken
+            }
+            val resolveUserId: () -> String? = {
+                userSession.userId
+                    ?: supabaseSdk.auth.currentSessionOrNull()?.user?.id?.toString()
+            }
             val restClient = SupabaseRestClient(
                 supabaseUrl = BuildConfig.SUPABASE_URL,
                 anonKey = BuildConfig.SUPABASE_ANON_KEY,
-                accessTokenProvider = { userSession.accessToken }
+                accessTokenProvider = resolveAccessToken
             )
             interestsCatalogRepository = SupabaseInterestsCatalogRepository(restClient)
-            interestsRepository = SupabaseInterestsRepository(restClient) { userSession.userId }
-            userPreferencesRepository = SupabaseUserPreferencesRepository(this, restClient) { userSession.userId }
-            readingHistoryRepository = SupabaseReadingHistoryRepository(restClient) { userSession.userId }
-            savedArticlesRepository = SupabaseSavedArticlesRepository(restClient) { userSession.userId }
+            interestsRepository = SupabaseInterestsRepository(restClient, resolveUserId)
+            userPreferencesRepository = SupabaseUserPreferencesRepository(this, restClient, resolveUserId)
+            readingHistoryRepository = SupabaseReadingHistoryRepository(restClient, resolveUserId)
+            savedArticlesRepository = SupabaseSavedArticlesRepository(restClient, resolveUserId)
             authRepository = SupabaseAuthRepository(
                 client = restClient,
                 session = userSession,
-                supabase = supabaseSdk ?: error("Supabase SDK init failed")
+                supabase = supabaseSdk
             )
         } else {
             interestsCatalogRepository = MockInterestsCatalogRepository()
@@ -151,12 +162,10 @@ class MainActivity : ComponentActivity() {
                         if (!useSupabase) return@LaunchedEffect
                         withContext(Dispatchers.IO) {
                             runCatching {
+                                // Restores session + loads interests/onboarding + profile from DB for current user
                                 model.syncSupabaseAuthSessionToApp()
                                 (interestsCatalogRepository as SupabaseInterestsCatalogRepository)
                                     .preloadCatalogIfEmpty()
-                                (interestsRepository as SupabaseInterestsRepository).awaitInitialSync()
-                                (userPreferencesRepository as SupabaseUserPreferencesRepository)
-                                    .bootstrapProfile()
                                 (savedArticlesRepository as SupabaseSavedArticlesRepository)
                                     .refreshSavedSuspend()
                                 (readingHistoryRepository as SupabaseReadingHistoryRepository)
@@ -267,7 +276,7 @@ class MainActivity : ComponentActivity() {
     ): String = when {
         useSupabase && authRepository.getCurrentUserId() == null -> "login"
         model.isOnboardingComplete() -> "home"
-        model.getUsername().isNotEmpty() -> "login"
-        else -> "signup"
+        useSupabase && authRepository.getCurrentUserId() != null -> "topicSelection"
+        else -> "login"
     }
 }
