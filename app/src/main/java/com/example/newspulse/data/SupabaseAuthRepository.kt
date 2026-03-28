@@ -128,6 +128,11 @@ class SupabaseAuthRepository(
 
     override suspend fun signInWithGoogle(): AuthResult {
         return try {
+            // Clear any persisted Supabase Auth session first. Otherwise observeSupabaseAuthUserId()
+            // can still emit the previous user while awaitingGoogleCompletion is true, and the app
+            // syncs the old account before the browser OAuth flow runs.
+            runCatching { supabase.auth.signOut() }
+            session.clear()
             supabase.auth.signInWith(Google)
             AuthResult(true)
         } catch (e: Exception) {
@@ -165,6 +170,9 @@ class SupabaseAuthRepository(
     }
 
     override fun getCurrentUserId(): String? = session.userId
+
+    override fun getAuthenticatedUserEmail(): String? =
+        supabase.auth.currentSessionOrNull()?.user?.email
 
     private suspend fun ensureUserProfile(userId: String, email: String) {
         val existing = client.select(

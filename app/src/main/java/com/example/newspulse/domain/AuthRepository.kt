@@ -29,4 +29,7 @@ interface AuthRepository {
 
     fun signOut()
     fun getCurrentUserId(): String?
+
+    /** Supabase Auth session email, if signed in with OAuth / Supabase Auth (not app_users-only). */
+    fun getAuthenticatedUserEmail(): String? = null
 }

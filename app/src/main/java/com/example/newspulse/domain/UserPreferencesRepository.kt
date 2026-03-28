@@ -10,4 +10,7 @@ interface UserPreferencesRepository {
     fun getStoredEmail(): String
     fun getStoredPassword(): String
     fun setStoredCredentials(email: String, password: String)
+
+    /** Reloads profile from remote after auth identity changes (e.g. Google sign-in). No-op for local-only prefs. */
+    suspend fun refreshProfileFromRemote() {}
 }

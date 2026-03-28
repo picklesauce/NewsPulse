@@ -86,6 +86,8 @@ class NewsPulseModel(
         interestsRepository.setOnboardingComplete()
     }
 
+    fun getCurrentUserId(): String? = authRepository?.getCurrentUserId()
+
     fun getUsername(): String = userPreferencesRepository.getUsername()
     fun setUsername(username: String) {
         userPreferencesRepository.setUsername(username)
@@ -100,7 +102,17 @@ class NewsPulseModel(
 
     suspend fun syncSupabaseAuthSessionToApp(): Boolean {
         val ok = authRepository?.syncSupabaseAuthSessionToApp() == true
-        if (ok) onUserLoggedIn()
+        if (ok) {
+            onUserLoggedIn()
+            // Display name = local part of Supabase Auth email (matches user_profiles / Google).
+            authRepository?.getAuthenticatedUserEmail()?.let { email ->
+                val local = email.trim().substringBefore("@").trim()
+                if (local.isNotBlank() && !email.endsWith("@placeholder.local")) {
+                    userPreferencesRepository.setUsername(local)
+                }
+            }
+            userPreferencesRepository.refreshProfileFromRemote()
+        }
         return ok
     }
 

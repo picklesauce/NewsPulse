@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -21,6 +22,10 @@ class SupabaseUserPreferencesRepository(
 ) : UserPreferencesRepository {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override suspend fun refreshProfileFromRemote() {
+        withContext(Dispatchers.IO) { bootstrapProfile() }
+    }
 
     /** Ensures remote profile row exists and caches username / member_since into prefs. */
     suspend fun bootstrapProfile() {
