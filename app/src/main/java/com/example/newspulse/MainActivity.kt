@@ -1,5 +1,6 @@
 package com.example.newspulse
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,7 +36,9 @@ import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
 import com.example.newspulse.data.remote.EventRegistryApi
 import com.example.newspulse.data.remote.SupabaseRestClient
+import com.example.newspulse.data.remote.SupabaseSdkHolder
 import com.example.newspulse.data.remote.SupabaseUserSession
+import io.github.jan.supabase.auth.handleDeeplinks
 import com.example.newspulse.domain.AuthRepository
 import com.example.newspulse.domain.InterestsCatalogRepository
 import com.example.newspulse.domain.InterestsRepository
@@ -66,6 +69,15 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : ComponentActivity() {
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (BuildConfig.SUPABASE_URL.isNotBlank() && BuildConfig.SUPABASE_ANON_KEY.isNotBlank()) {
+            SupabaseSdkHolder.client?.handleDeeplinks(intent)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -80,6 +92,10 @@ class MainActivity : ComponentActivity() {
 
         if (useSupabase) {
             val userSession = SupabaseUserSession(this)
+            val supabaseSdk = SupabaseSdkHolder.init(
+                supabaseUrl = BuildConfig.SUPABASE_URL,
+                supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY
+            )
             val restClient = SupabaseRestClient(
                 supabaseUrl = BuildConfig.SUPABASE_URL,
                 anonKey = BuildConfig.SUPABASE_ANON_KEY,
@@ -92,7 +108,8 @@ class MainActivity : ComponentActivity() {
             savedArticlesRepository = SupabaseSavedArticlesRepository(restClient) { userSession.userId }
             authRepository = SupabaseAuthRepository(
                 client = restClient,
-                session = userSession
+                session = userSession,
+                supabase = supabaseSdk ?: error("Supabase SDK init failed")
             )
         } else {
             interestsCatalogRepository = MockInterestsCatalogRepository()
@@ -115,6 +132,10 @@ class MainActivity : ComponentActivity() {
         )
         val viewModelFactory = ViewModelFactory(model)
 
+        if (useSupabase) {
+            SupabaseSdkHolder.client?.handleDeeplinks(intent)
+        }
+
         setContent {
             NewsPulseTheme {
                 CompositionLocalProvider(
@@ -130,6 +151,7 @@ class MainActivity : ComponentActivity() {
                         if (!useSupabase) return@LaunchedEffect
                         withContext(Dispatchers.IO) {
                             runCatching {
+                                model.syncSupabaseAuthSessionToApp()
                                 (interestsCatalogRepository as SupabaseInterestsCatalogRepository)
                                     .preloadCatalogIfEmpty()
                                 (interestsRepository as SupabaseInterestsRepository).awaitInitialSync()

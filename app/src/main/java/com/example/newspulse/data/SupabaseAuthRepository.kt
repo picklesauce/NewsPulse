@@ -4,6 +4,12 @@ import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.data.remote.SupabaseUserSession
 import com.example.newspulse.domain.AuthRepository
 import com.example.newspulse.domain.AuthResult
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -12,7 +18,8 @@ import java.util.UUID
 
 class SupabaseAuthRepository(
     private val client: SupabaseRestClient,
-    private val session: SupabaseUserSession
+    private val session: SupabaseUserSession,
+    private val supabase: SupabaseClient
 ) : AuthRepository {
     private val usersTable = "app_users"
 
@@ -119,9 +126,41 @@ class SupabaseAuthRepository(
         return AuthResult(true)
     }
 
+    override suspend fun signInWithGoogle(): AuthResult {
+        return try {
+            supabase.auth.signInWith(Google)
+            AuthResult(true)
+        } catch (e: Exception) {
+            AuthResult(false, e.message ?: "Google sign-in failed")
+        }
+    }
+
+    override fun observeSupabaseAuthUserId(): Flow<String?> =
+        supabase.auth.sessionStatus.map { status ->
+            when (status) {
+                is SessionStatus.Authenticated -> status.session.user?.id?.toString()
+                else -> null
+            }
+        }
+
+    override suspend fun syncSupabaseAuthSessionToApp(): Boolean {
+        val s = supabase.auth.currentSessionOrNull() ?: return false
+        val user = s.user ?: return false
+        val uid = user.id.toString()
+        if (uid.isBlank()) return false
+        session.accessToken = s.accessToken
+        session.userId = uid
+        val email = user.email ?: "user@placeholder.local"
+        ensureUserProfile(uid, email)
+        return true
+    }
+
     private fun looksLikeEmail(s: String): Boolean = "@" in s
 
     override fun signOut() {
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { supabase.auth.signOut() }
+        }
         session.clear()
     }
 

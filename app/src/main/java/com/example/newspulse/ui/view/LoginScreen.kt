@@ -1,7 +1,7 @@
 package com.example.newspulse.ui.view
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,20 +23,22 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -60,8 +62,6 @@ private val AccentPurple = Color(0xFF6C63FF)
 private val FieldBorder = Color(0xFFE0E0E0)
 private val HintGray = Color(0xFF9E9E9E)
 private val LabelDark = Color(0xFF1C1B1F)
-private val LinkBlue = Color(0xFF2979FF)
-
 @Composable
 fun LoginScreen(
     navController: NavController,
@@ -105,6 +105,70 @@ fun LoginScreen(
                         color = HintGray,
                         modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                     )
+
+                    LaunchedEffect(state.oauthNavigateHome) {
+                        if (state.oauthNavigateHome) {
+                            viewModel.consumeOAuthNavigation()
+                            navController.navigate(
+                                if (viewModel.isOnboardingComplete()) "home" else "topicSelection"
+                            ) {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { viewModel.continueWithGoogle() },
+                        enabled = !state.isGoogleLoading,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, FieldBorder)
+                    ) {
+                        if (state.isGoogleLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.dp,
+                                color = AccentPurple
+                            )
+                        } else {
+                            Text(
+                                text = "Continue with Google",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = LabelDark
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(1.dp)
+                                .background(FieldBorder)
+                        )
+                        Text(
+                            text = "  or  ",
+                            fontSize = 13.sp,
+                            color = HintGray
+                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(1.dp)
+                                .background(FieldBorder)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     AuthFieldLabel("Email/Username")
                     OutlinedTextField(
@@ -197,56 +261,6 @@ fun LoginScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(1.dp)
-                                .background(FieldBorder)
-                        )
-                        Text(
-                            text = "  or  ",
-                            fontSize = 13.sp,
-                            color = HintGray
-                        )
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(1.dp)
-                                .background(FieldBorder)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Don't have an account? ",
-                            fontSize = 14.sp,
-                            color = LabelDark
-                        )
-                        Text(
-                            text = "Sign Up",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = LinkBlue,
-                            modifier = Modifier.clickable {
-                                navController.navigate("signup") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            }
-                        )
-                    }
                 }
             }
 

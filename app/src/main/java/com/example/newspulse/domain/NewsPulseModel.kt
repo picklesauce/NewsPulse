@@ -9,6 +9,7 @@ import com.example.newspulse.domain.util.ArticleDeduplicator
 import com.example.newspulse.domain.util.DiscoverCategoryRelevance
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -88,6 +89,19 @@ class NewsPulseModel(
     fun getUsername(): String = userPreferencesRepository.getUsername()
     fun setUsername(username: String) {
         userPreferencesRepository.setUsername(username)
+    }
+
+    suspend fun signInWithGoogle(): AuthResult =
+        authRepository?.let { withContext(Dispatchers.IO) { it.signInWithGoogle() } }
+            ?: AuthResult(false, "Google sign-in is not available")
+
+    fun observeSupabaseAuthUserId(): Flow<String?> =
+        authRepository?.observeSupabaseAuthUserId() ?: emptyFlow()
+
+    suspend fun syncSupabaseAuthSessionToApp(): Boolean {
+        val ok = authRepository?.syncSupabaseAuthSessionToApp() == true
+        if (ok) onUserLoggedIn()
+        return ok
     }
 
     suspend fun logIn(email: String, password: String): AuthResult {
