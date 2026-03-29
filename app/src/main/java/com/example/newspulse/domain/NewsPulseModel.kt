@@ -76,6 +76,18 @@ class NewsPulseModel(
 
     fun getFollowedInterestIds(): Set<String> = interestsRepository.getFollowedInterestIds()
 
+    /**
+     * True if this interest is followed, including when [Interest.id] is a Discover placeholder
+     * (e.g. `interest-technology`) but the catalog / DB row uses a different id (e.g. UUID).
+     */
+    fun isInterestFollowed(interest: Interest): Boolean {
+        val ids = getFollowedInterestIds()
+        if (interest.id in ids) return true
+        return getAllInterests().any {
+            it.name.equals(interest.name, ignoreCase = true) && it.id in ids
+        }
+    }
+
     fun getFollowedInterests(): List<Interest> {
         val ids = interestsRepository.getFollowedInterestIds()
         return interestsCatalogRepository.getAllInterests().filter { it.id in ids }

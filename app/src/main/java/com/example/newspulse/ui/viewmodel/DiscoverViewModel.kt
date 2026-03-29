@@ -37,7 +37,7 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
         val canonical = model.getAllInterests()
             .find { it.name.equals(interest.name, ignoreCase = true) }
             ?: interest
-        val followed = model.getFollowedInterestIds().contains(canonical.id)
+        val followed = model.isInterestFollowed(canonical)
         _uiState.update {
             it.copy(
                 selectedInterest = canonical,
@@ -71,15 +71,24 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
         viewModelScope.launch {
             val canonical = model.getAllInterests()
                 .find { it.name.equals(interest.name, ignoreCase = true) }
-            val targetId = if (canonical != null) {
+            if (canonical != null) {
                 model.followInterestSuspend(canonical.id)
-                canonical.id
             } else {
-                model.addCustomInterest(interest.name, interest.type).id
+                model.addCustomInterest(interest.name, interest.type)
             }
-            val nowFollowed = model.getFollowedInterestIds().contains(targetId)
-            model.forceRefreshNews()
-            _uiState.update { it.copy(isFollowed = nowFollowed) }
+            val refreshed = model.getAllInterests()
+                .find { it.name.equals(interest.name, ignoreCase = true) }
+                ?: interest
+            _uiState.update {
+                it.copy(
+                    selectedInterest = refreshed,
+                    isFollowed = model.isInterestFollowed(refreshed)
+                )
+            }
+            // Refresh feed in the background — do not block the Follow / Following UI on network.
+            launch {
+                runCatching { model.forceRefreshNews() }
+            }
         }
     }
 
@@ -91,8 +100,10 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
                 .find { it.name.equals(interest.name, ignoreCase = true) }?.id
                 ?: "interest-${interest.name.lowercase().replace(" ", "-")}"
             model.unfollowInterestSuspend(id)
-            model.forceRefreshNews()
             _uiState.update { it.copy(isFollowed = false) }
+            launch {
+                runCatching { model.forceRefreshNews() }
+            }
         }
     }
 
