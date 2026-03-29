@@ -8,6 +8,12 @@ import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.InterestType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -23,10 +29,12 @@ import org.junit.Test
  * - InterestsViewModel follow/unfollow updates state
  * 
  * Note: These are pure unit tests with no Android instrumentation.
- * StateFlow updates are synchronous, so no test dispatchers are needed.
+ * Main dispatcher is set so viewModelScope in follow toggles runs to completion.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class InterestsViewModelTest {
 
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var model: NewsPulseModel
     private lateinit var viewModel: InterestsViewModel
 
@@ -36,6 +44,7 @@ class InterestsViewModelTest {
      */
     @Before
     fun setUp() {
+        Dispatchers.setMain(testDispatcher)
         model = NewsPulseModel(
             newsRepository = MockNewsRepository(),
             interestsRepository = MockInterestsRepository(),
@@ -45,6 +54,11 @@ class InterestsViewModelTest {
             savedArticlesRepository = InMemorySavedArticlesRepository()
         )
         viewModel = InterestsViewModel(model)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     // ========== Initial State Tests ==========

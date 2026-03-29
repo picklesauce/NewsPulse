@@ -3,6 +3,7 @@ package com.example.newspulse.data.mock
 import com.example.newspulse.domain.InterestsCatalogRepository
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
+import com.example.newspulse.domain.util.InterestSlug
 
 class MockInterestsCatalogRepository : InterestsCatalogRepository {
     private val customInterests = mutableListOf<Interest>()
@@ -15,7 +16,7 @@ class MockInterestsCatalogRepository : InterestsCatalogRepository {
         if (existing != null) return existing
 
         val interest = Interest(
-            id = "interest-${name.lowercase().replace(" ", "-")}",
+            id = InterestSlug.stableIdForName(name),
             type = type,
             name = name
         )

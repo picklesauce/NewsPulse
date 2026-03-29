@@ -9,8 +9,10 @@ import com.example.newspulse.domain.model.InterestType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class DiscoverUiState(
     val interestsByType: Map<InterestType, List<Interest>> = emptyMap(),
@@ -18,7 +20,10 @@ data class DiscoverUiState(
     val selectedInterest: Interest? = null,
     val articlesForSelected: List<Article> = emptyList(),
     val isLoading: Boolean = false,
-    val isFollowed: Boolean = false
+    val isFollowed: Boolean = false,
+    /** True while follow/unfollow is in flight. */
+    val isFollowBusy: Boolean = false,
+    val followError: String? = null
 )
 
 class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
@@ -33,18 +38,27 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
         _uiState.update { it.copy(interestsByType = grouped) }
     }
 
-    fun onSelectInterest(interest: Interest) {
-        val followed = model.getFollowedInterestIds().contains(interest.id)
-        _uiState.update {
-            it.copy(
-                selectedInterest = interest,
-                articlesForSelected = emptyList(),
-                isLoading = true,
-                isFollowed = followed
-            )
-        }
+    /**
+     * Opens a Discover category using the same interest ids as the catalog / Supabase
+     * (not synthetic `discover-*` ids), so follow state and saves stay consistent.
+     */
+    fun onSelectCategory(name: String, type: InterestType) {
         viewModelScope.launch {
-            val articles = model.searchArticlesByKeyword(interest.name)
+            val interest = model.interestForDiscoverCategory(name, type)
+            val followed = model.getFollowedInterestIds().contains(interest.id)
+            _uiState.update {
+                it.copy(
+                    selectedInterest = interest,
+                    articlesForSelected = emptyList(),
+                    isLoading = true,
+                    isFollowed = followed,
+                    isFollowBusy = false,
+                    followError = null
+                )
+            }
+            val articles = withContext(Dispatchers.IO) {
+                model.searchArticlesByKeyword(interest.name)
+            }
             _uiState.update {
                 it.copy(articlesForSelected = articles, isLoading = false)
             }
@@ -57,16 +71,67 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
                 selectedInterest = null,
                 articlesForSelected = emptyList(),
                 isLoading = false,
-                isFollowed = false
+                isFollowed = false,
+                isFollowBusy = false,
+                followError = null
             )
         }
     }
 
     fun onFollowTopic() {
         val interest = _uiState.value.selectedInterest ?: return
-        if (_uiState.value.isFollowed) return
-        model.addCustomInterest(interest.name, interest.type)
-        _uiState.update { it.copy(isFollowed = true) }
+        if (_uiState.value.isFollowed || _uiState.value.isFollowBusy) return
+        _uiState.update { it.copy(isFollowBusy = true, followError = null) }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val ok = model.followDiscoverInterest(interest)
+                withContext(Dispatchers.Main.immediate) {
+                    if (ok) {
+                        _uiState.update { it.copy(isFollowed = true, followError = null) }
+                    } else {
+                        val msg =
+                            if (model.shouldShowSignInForFollowFailure()) {
+                                "Sign in to save topics to your account."
+                            } else {
+                                "Couldn’t save follow. Check connection and try again."
+                            }
+                        _uiState.update { it.copy(followError = msg) }
+                    }
+                }
+            } finally {
+                withContext(Dispatchers.Main.immediate) {
+                    _uiState.update { it.copy(isFollowBusy = false) }
+                }
+            }
+        }
+    }
+
+    fun onUnfollowTopic() {
+        val interest = _uiState.value.selectedInterest ?: return
+        if (!_uiState.value.isFollowed || _uiState.value.isFollowBusy) return
+        _uiState.update { it.copy(isFollowBusy = true, followError = null) }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val ok = model.unfollowDiscoverInterest(interest)
+                withContext(Dispatchers.Main.immediate) {
+                    if (ok) {
+                        _uiState.update { it.copy(isFollowed = false, followError = null) }
+                    } else {
+                        val msg =
+                            if (model.shouldShowSignInForFollowFailure()) {
+                                "Sign in to update topics on your account."
+                            } else {
+                                "Couldn’t unfollow. Check connection and try again."
+                            }
+                        _uiState.update { it.copy(followError = msg) }
+                    }
+                }
+            } finally {
+                withContext(Dispatchers.Main.immediate) {
+                    _uiState.update { it.copy(isFollowBusy = false) }
+                }
+            }
+        }
     }
 
     fun onSetTypeFilter(type: InterestType?) {

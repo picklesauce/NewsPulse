@@ -7,6 +7,12 @@ import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
 import com.example.newspulse.domain.NewsPulseModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -15,13 +21,16 @@ import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalCoroutinesApi::class)
 internal class LoginViewModelTest {
 
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var model: NewsPulseModel
     private lateinit var viewModel: LoginViewModel
 
     @Before
     fun setUp() {
+        Dispatchers.setMain(testDispatcher)
         val fakePrefs = FakeUserPreferencesRepository()
         model = NewsPulseModel(
             newsRepository = MockNewsRepository(),
@@ -32,6 +41,11 @@ internal class LoginViewModelTest {
             savedArticlesRepository = InMemorySavedArticlesRepository()
         )
         viewModel = LoginViewModel(model)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -59,7 +73,7 @@ internal class LoginViewModelTest {
         var result: Boolean? = null
         viewModel.logIn { result = it }
         assertEquals(false, result)
-        assertEquals("Please enter your email address", viewModel.uiState.value.errorMessage)
+        assertEquals("Please enter your email or username", viewModel.uiState.value.errorMessage)
     }
 
     @Test

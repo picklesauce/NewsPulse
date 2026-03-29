@@ -7,6 +7,7 @@ import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
 import com.example.newspulse.domain.NewsPulseModel
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -63,10 +64,10 @@ internal class TopicSelectionViewModelTest {
     }
 
     @Test
-    fun saveAndContinue_persistsFollowedIdsAndCompletesOnboarding() {
+    fun saveAndContinue_persistsFollowedIdsAndCompletesOnboarding() = runBlocking {
         viewModel.toggleTopic("Technology")
         viewModel.toggleTopic("Science")
-        viewModel.saveAndContinue()
+        assertTrue(viewModel.saveAndContinueNow())
 
         val followedNames = model.getFollowedInterests().map { it.name }.toSet()
         assertTrue(followedNames.contains("Technology"))

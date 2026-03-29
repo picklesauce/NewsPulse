@@ -136,10 +136,11 @@ fun FiltersScreen(
             ) {
                 Button(
                     onClick = {
-                        viewModel.apply()
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = false }
-                            launchSingleTop = true
+                        viewModel.apply {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = false }
+                                launchSingleTop = true
+                            }
                         }
                     },
                     modifier = Modifier

@@ -1,6 +1,7 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Single source of truth for the Interests screen.
@@ -92,23 +94,33 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
     }
 
     fun onFollowToggle(id: String) {
-        if (_followedIds.value.contains(id)) {
-            model.unfollowInterest(id)
-            _followedIds.update { it - id }
-        } else {
-            model.followInterest(id)
-            _followedIds.update { it + id }
+        viewModelScope.launch {
+            if (_followedIds.value.contains(id)) {
+                if (model.unfollowInterestSuspend(id)) {
+                    _followedIds.update { it - id }
+                }
+            } else {
+                if (model.followInterestSuspend(id)) {
+                    _followedIds.update { it + id }
+                }
+            }
+            refreshUiState()
         }
-        refreshUiState()
     }
 
     fun addCustomInterest(type: InterestType) {
         val name = _searchQuery.value.trim()
         if (name.length < 2) return
-        val interest = model.addCustomInterest(name, type)
-        _followedIds.update { it + interest.id }
-        _searchQuery.value = ""
-        refreshUiState()
+        viewModelScope.launch {
+            if (model.addCustomInterestPersisted(name, type)) {
+                val interest = model.getAllInterests().find { it.name.equals(name, ignoreCase = true) }
+                if (interest != null) {
+                    _followedIds.update { it + interest.id }
+                }
+                _searchQuery.value = ""
+                refreshUiState()
+            }
+        }
     }
 
     private companion object {

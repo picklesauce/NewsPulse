@@ -17,6 +17,8 @@ class SupabaseInterestsRepository(
     private val userIdProvider: () -> String?
 ) : InterestsRepository {
 
+    override fun needsAuthenticatedUserForWrite(): Boolean = true
+
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var followedIds: MutableSet<String> = mutableSetOf()
@@ -26,46 +28,77 @@ class SupabaseInterestsRepository(
     override fun getFollowedInterestIds(): Set<String> = synchronized(stateLock) { followedIds.toSet() }
 
     override fun setFollowedInterestIds(ids: Set<String>) {
-        val userId = userIdProvider() ?: return
-        synchronized(stateLock) { followedIds = ids.toMutableSet() }
-        ioScope.launch {
-            client.delete("followed_interests", mapOf("user_id" to "eq.$userId"))
-            ids.forEach { interestId ->
-                val row = JSONObject()
-                    .put("id", UUID.randomUUID().toString())
-                    .put("user_id", userId)
-                    .put("interest_id", interestId)
-                client.insert(table = "followed_interests", body = row)
-            }
-        }
+        ioScope.launch { setFollowedInterestIdsSuspend(ids) }
     }
 
-    override fun followInterest(id: String) {
-        val userId = userIdProvider() ?: return
-        synchronized(stateLock) {
-            if (!followedIds.add(id)) return
+    override suspend fun setFollowedInterestIdsSuspend(ids: Set<String>): Boolean {
+        val userId = userIdProvider() ?: return false
+        if (!client.delete("followed_interests", mapOf("user_id" to "eq.$userId"))) {
+            reloadSuspend()
+            return false
         }
-        ioScope.launch {
+        for (interestId in ids) {
             val row = JSONObject()
                 .put("id", UUID.randomUUID().toString())
                 .put("user_id", userId)
-                .put("interest_id", id)
-            client.insert(table = "followed_interests", body = row)
+                .put("interest_id", interestId)
+            if (!client.insert(table = "followed_interests", body = row)) {
+                reloadSuspend()
+                return false
+            }
         }
+        synchronized(stateLock) { followedIds = ids.toMutableSet() }
+        return true
+    }
+
+    override fun followInterest(id: String) {
+        ioScope.launch { followInterestSuspend(id) }
+    }
+
+    override suspend fun followInterestSuspend(id: String): Boolean {
+        val userId = userIdProvider() ?: return false
+        synchronized(stateLock) {
+            if (id in followedIds) return true
+        }
+        val row = JSONObject()
+            .put("id", UUID.randomUUID().toString())
+            .put("user_id", userId)
+            .put("interest_id", id)
+        var ok = client.insert(table = "followed_interests", body = row)
+        if (!ok && isDuplicateOrConflict(client.lastError)) {
+            ok = true
+        }
+        if (ok) {
+            synchronized(stateLock) { followedIds.add(id) }
+        }
+        return ok
+    }
+
+    private fun isDuplicateOrConflict(message: String?): Boolean {
+        if (message.isNullOrBlank()) return false
+        return message.contains("409") ||
+            message.contains("23505") ||
+            message.contains("duplicate", ignoreCase = true) ||
+            message.contains("unique", ignoreCase = true)
     }
 
     override fun unfollowInterest(id: String) {
-        val userId = userIdProvider() ?: return
-        synchronized(stateLock) { followedIds.remove(id) }
-        ioScope.launch {
-            client.delete(
-                "followed_interests",
-                mapOf(
-                    "user_id" to "eq.$userId",
-                    "interest_id" to "eq.$id"
-                )
+        ioScope.launch { unfollowInterestSuspend(id) }
+    }
+
+    override suspend fun unfollowInterestSuspend(id: String): Boolean {
+        val userId = userIdProvider() ?: return false
+        val ok = client.delete(
+            "followed_interests",
+            mapOf(
+                "user_id" to "eq.$userId",
+                "interest_id" to "eq.$id"
             )
+        )
+        if (ok) {
+            synchronized(stateLock) { followedIds.remove(id) }
         }
+        return ok
     }
 
     override fun onUserChanged() {
@@ -75,16 +108,21 @@ class SupabaseInterestsRepository(
     override fun isOnboardingComplete(): Boolean = synchronized(stateLock) { onboardingComplete }
 
     override fun setOnboardingComplete() {
-        val userId = userIdProvider() ?: return
-        synchronized(stateLock) { onboardingComplete = true }
-        ioScope.launch {
-            val body = JSONObject().put("onboarding_complete", true)
-            client.patch(
-                table = "user_profiles",
-                body = body,
-                filters = mapOf("user_id" to "eq.$userId")
-            )
+        ioScope.launch { setOnboardingCompleteSuspend() }
+    }
+
+    override suspend fun setOnboardingCompleteSuspend(): Boolean {
+        val userId = userIdProvider() ?: return false
+        val body = JSONObject().put("onboarding_complete", true)
+        val ok = client.patch(
+            table = "user_profiles",
+            body = body,
+            filters = mapOf("user_id" to "eq.$userId")
+        )
+        if (ok) {
+            synchronized(stateLock) { onboardingComplete = true }
         }
+        return ok
     }
 
     /** Loads profile + followed interests from Supabase; call from IO dispatcher during bootstrap. */

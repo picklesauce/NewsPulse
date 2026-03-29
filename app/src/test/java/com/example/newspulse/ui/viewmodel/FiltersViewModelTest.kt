@@ -7,6 +7,7 @@ import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
 import com.example.newspulse.domain.NewsPulseModel
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -54,11 +55,11 @@ internal class FiltersViewModelTest {
     }
 
     @Test
-    fun apply_persistsSelectedIdsToModel() {
+    fun apply_persistsSelectedIdsToModel() = runBlocking {
         val techId = model.getAllInterests().find { it.name == "Technology" }!!.id
         viewModel.reset()
         viewModel.toggleInterest(techId)
-        viewModel.apply()
+        viewModel.applyFiltersNow()
 
         assertEquals(setOf(techId), model.getFollowedInterestIds())
     }

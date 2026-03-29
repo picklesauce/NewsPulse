@@ -7,6 +7,7 @@ import com.example.newspulse.domain.model.ReadingHistoryItem
 import com.example.newspulse.domain.model.UserProfile
 import com.example.newspulse.domain.util.ArticleDeduplicator
 import com.example.newspulse.domain.util.DiscoverCategoryRelevance
+import com.example.newspulse.domain.util.InterestSlug
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,20 @@ class NewsPulseModel(
     fun getAllInterests(): List<Interest> =
         interestsCatalogRepository.getAllInterests()
 
+    /**
+     * Interest for a Discover grid category: uses the same id as [addCustomInterestPersisted]
+     * will create (catalog UUID/slug match), so follow state and Supabase rows stay aligned.
+     */
+    fun interestForDiscoverCategory(name: String, type: InterestType): Interest {
+        val existing = getAllInterests().find { it.name.equals(name, ignoreCase = true) }
+        if (existing != null) return existing
+        return Interest(
+            id = InterestSlug.stableIdForName(name),
+            type = type,
+            name = name
+        )
+    }
+
     /** Creates a custom interest, adds it to the catalog, and auto-follows it. */
     fun addCustomInterest(name: String, type: InterestType): Interest {
         val interest = interestsCatalogRepository.addCustomInterest(name, type)
@@ -72,8 +87,52 @@ class NewsPulseModel(
 
     fun getFollowedInterestNames(): Set<String> = getFollowedInterests().map { it.name }.toSet()
 
+    fun getCloudUserId(): String? = authRepository?.getCurrentUserId()
+
+    fun shouldShowSignInForFollowFailure(): Boolean =
+        interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null
+
     fun setFollowedInterestIds(ids: Set<String>) {
         interestsRepository.setFollowedInterestIds(ids)
+    }
+
+    suspend fun followInterestSuspend(id: String): Boolean =
+        interestsRepository.followInterestSuspend(id)
+
+    suspend fun unfollowInterestSuspend(id: String): Boolean =
+        interestsRepository.unfollowInterestSuspend(id)
+
+    suspend fun setFollowedInterestIdsSuspend(ids: Set<String>): Boolean =
+        interestsRepository.setFollowedInterestIdsSuspend(ids)
+
+    suspend fun setOnboardingCompleteSuspend(): Boolean =
+        interestsRepository.setOnboardingCompleteSuspend()
+
+    /** Persist new catalog row (when needed) then follow; used for Interests / topic flows. */
+    suspend fun addCustomInterestPersisted(name: String, type: InterestType): Boolean {
+        val interest = interestsCatalogRepository.addCustomInterestPersisted(name, type)
+        return followInterestSuspend(interest.id)
+    }
+
+    /** Discover: ensure catalog + follow row exist in order (avoids Supabase FK / race issues). */
+    suspend fun followDiscoverInterest(interest: Interest): Boolean {
+        if (interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null) {
+            return false
+        }
+        return withContext(Dispatchers.IO) {
+            val resolved = interestsCatalogRepository.addCustomInterestPersisted(interest.name, interest.type)
+            followInterestSuspend(resolved.id)
+        }
+    }
+
+    /** Discover: remove follow row in Postgres / local store. */
+    suspend fun unfollowDiscoverInterest(interest: Interest): Boolean {
+        if (interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null) {
+            return false
+        }
+        return withContext(Dispatchers.IO) {
+            unfollowInterestSuspend(interest.id)
+        }
     }
 
     fun isOnboardingComplete(): Boolean = interestsRepository.isOnboardingComplete()
