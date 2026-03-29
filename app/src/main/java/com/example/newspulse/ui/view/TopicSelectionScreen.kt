@@ -58,6 +58,8 @@ fun TopicSelectionScreen(
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedTopics by viewModel.selectedTopics.collectAsState()
+    val saveError by viewModel.saveError.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState()
     val filteredTopics = viewModel.getFilteredTopics()
     val canAddCustom = viewModel.canAddCustom()
     var typePickerExpanded by remember { mutableStateOf(false) }
@@ -185,6 +187,18 @@ fun TopicSelectionScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
 
+        saveError?.let { msg ->
+            Text(
+                text = msg,
+                color = Color(0xFFB3261E),
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         Button(
             onClick = {
                 viewModel.saveAndContinue {
@@ -197,7 +211,7 @@ fun TopicSelectionScreen(
                 .fillMaxWidth()
                 .padding(24.dp)
                 .height(48.dp),
-            enabled = selectedTopics.isNotEmpty(),
+            enabled = selectedTopics.isNotEmpty() && !isSaving,
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF1C1B1F),
