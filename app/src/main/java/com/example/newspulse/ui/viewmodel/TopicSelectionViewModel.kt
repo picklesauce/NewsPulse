@@ -46,18 +46,24 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
         val name = _searchQuery.value.trim()
         if (name.length < 2) return
         viewModelScope.launch {
-            val interest = model.addCustomInterest(name, type)
-            _selectedTopics.update { it + interest.name }
-            _searchQuery.value = ""
+            if (model.addCustomInterestPersisted(name, type)) {
+                _selectedTopics.update { it + name }
+                _searchQuery.value = ""
+            }
         }
     }
 
-    fun saveAndContinue() {
+    suspend fun saveAndContinueNow(): Boolean {
         val ids = model.getAllInterests()
             .filter { it.name in _selectedTopics.value }
             .map { it.id }
             .toSet()
-        model.setFollowedInterestIds(ids)
-        model.setOnboardingComplete()
+        return model.setFollowedInterestIdsSuspend(ids) && model.setOnboardingCompleteSuspend()
+    }
+
+    fun saveAndContinue(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            if (saveAndContinueNow()) onSuccess()
+        }
     }
 }

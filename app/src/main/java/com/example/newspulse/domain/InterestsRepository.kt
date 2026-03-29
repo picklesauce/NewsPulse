@@ -6,16 +6,31 @@ interface InterestsRepository {
     fun followInterest(id: String)
     fun unfollowInterest(id: String)
 
-    /** Await persistence (e.g. Supabase insert) so a row exists before dependent writes. */
-    suspend fun followInterestSuspend(id: String) {
-        followInterest(id)
-    }
-
-    suspend fun unfollowInterestSuspend(id: String) {
-        unfollowInterest(id)
-    }
-
     fun isOnboardingComplete(): Boolean
     fun setOnboardingComplete()
     fun onUserChanged() {}
+
+    /** True when writes go to Supabase and require [AuthRepository.getCurrentUserId]. */
+    fun needsAuthenticatedUserForWrite(): Boolean = false
+
+    /** Await remote persistence (Supabase); default uses sync methods. */
+    suspend fun followInterestSuspend(id: String): Boolean {
+        followInterest(id)
+        return true
+    }
+
+    suspend fun unfollowInterestSuspend(id: String): Boolean {
+        unfollowInterest(id)
+        return true
+    }
+
+    suspend fun setFollowedInterestIdsSuspend(ids: Set<String>): Boolean {
+        setFollowedInterestIds(ids)
+        return true
+    }
+
+    suspend fun setOnboardingCompleteSuspend(): Boolean {
+        setOnboardingComplete()
+        return true
+    }
 }

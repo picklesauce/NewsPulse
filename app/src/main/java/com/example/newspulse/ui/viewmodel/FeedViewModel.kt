@@ -81,8 +81,10 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     fun unfollowInterest(name: String) {
         val id = model.getAllInterests().find { it.name == name }?.id ?: return
-        model.unfollowInterest(id)
-        refreshArticles()
+        viewModelScope.launch {
+            model.unfollowInterestSuspend(id)
+            refreshArticles()
+        }
     }
 
     fun onToggleInterestFilter(topic: String) {

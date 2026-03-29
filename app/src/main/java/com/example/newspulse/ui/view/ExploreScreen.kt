@@ -84,7 +84,6 @@ private data class DiscoverCategory(
     val interestType: InterestType = InterestType.Topic
 )
 
-// Names must match `DiscoverCategories.NAMES` (home feed splits followed topics by this list).
 private val categories = listOf(
     DiscoverCategory("Technology", "Latest tech news & innovations", Icons.Outlined.Devices),
     DiscoverCategory("Finance", "Markets, stocks & economy", Icons.Outlined.AccountBalance),
@@ -115,6 +114,8 @@ fun ExploreScreen(
             articles = state.articlesForSelected,
             isLoading = state.isLoading,
             isFollowed = state.isFollowed,
+            isFollowBusy = state.isFollowBusy,
+            followError = state.followError,
             onBack = { viewModel.onClearSelection() },
             onArticleClick = { id -> navController.navigate("articleDetail/$id") },
             onFollow = { viewModel.onFollowTopic() },
@@ -123,12 +124,7 @@ fun ExploreScreen(
     } else {
         DiscoverBrowseView(
             onCategoryClick = { category ->
-                val interest = Interest(
-                    id = "interest-${category.name.lowercase().replace(" ", "-")}",
-                    type = category.interestType,
-                    name = category.name
-                )
-                viewModel.onSelectInterest(interest)
+                viewModel.onSelectCategory(category.name, category.interestType)
             }
         )
     }
@@ -259,6 +255,8 @@ private fun DiscoverArticleView(
     articles: List<Article>,
     isLoading: Boolean,
     isFollowed: Boolean,
+    isFollowBusy: Boolean,
+    followError: String?,
     onBack: () -> Unit,
     onArticleClick: (String) -> Unit,
     onFollow: () -> Unit,
@@ -309,37 +307,83 @@ private fun DiscoverArticleView(
                     if (isFollowed) {
                         OutlinedButton(
                             onClick = onUnfollow,
+                            enabled = !isFollowBusy,
                             shape = RoundedCornerShape(20.dp),
                             border = BorderStroke(1.dp, Color(0xFF4CAF50)),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = Color(0xFF4CAF50)
+                                contentColor = Color(0xFF2E7D32),
+                                disabledContentColor = Color(0xFF9E9E9E)
                             )
                         ) {
-                            Icon(
-                                Icons.Outlined.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Following", fontSize = 13.sp)
+                            if (isFollowBusy) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color(0xFF2E7D32),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Updating…", fontSize = 13.sp)
+                            } else {
+                                Icon(
+                                    Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Column {
+                                    Text(
+                                        "Following",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        "Tap to unfollow",
+                                        fontSize = 10.sp,
+                                        color = Color(0xFF79747E),
+                                        lineHeight = 12.sp
+                                    )
+                                }
+                            }
                         }
                     } else {
                         Button(
                             onClick = onFollow,
+                            enabled = !isFollowBusy,
                             shape = RoundedCornerShape(20.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF1C1B1F)
+                                containerColor = Color(0xFF1C1B1F),
+                                disabledContainerColor = Color(0xFF9E9E9E)
                             )
                         ) {
-                            Icon(
-                                Icons.Outlined.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Follow", fontSize = 13.sp)
+                            if (isFollowBusy) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Saving…", fontSize = 13.sp)
+                            } else {
+                                Icon(
+                                    Icons.Outlined.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Follow", fontSize = 13.sp)
+                            }
                         }
                     }
+                }
+                if (followError != null) {
+                    Text(
+                        text = followError,
+                        fontSize = 12.sp,
+                        color = Color(0xFFB3261E),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
                 }
                 HorizontalDivider(color = Color(0xFFE7E0EC), thickness = 1.dp)
             }

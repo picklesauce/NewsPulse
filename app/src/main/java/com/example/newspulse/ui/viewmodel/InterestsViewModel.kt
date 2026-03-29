@@ -94,24 +94,32 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
     }
 
     fun onFollowToggle(id: String) {
-        if (_followedIds.value.contains(id)) {
-            model.unfollowInterest(id)
-            _followedIds.update { it - id }
-        } else {
-            model.followInterest(id)
-            _followedIds.update { it + id }
+        viewModelScope.launch {
+            if (_followedIds.value.contains(id)) {
+                if (model.unfollowInterestSuspend(id)) {
+                    _followedIds.update { it - id }
+                }
+            } else {
+                if (model.followInterestSuspend(id)) {
+                    _followedIds.update { it + id }
+                }
+            }
+            refreshUiState()
         }
-        refreshUiState()
     }
 
     fun addCustomInterest(type: InterestType) {
         val name = _searchQuery.value.trim()
         if (name.length < 2) return
         viewModelScope.launch {
-            val interest = model.addCustomInterest(name, type)
-            _followedIds.update { it + interest.id }
-            _searchQuery.value = ""
-            refreshUiState()
+            if (model.addCustomInterestPersisted(name, type)) {
+                val interest = model.getAllInterests().find { it.name.equals(name, ignoreCase = true) }
+                if (interest != null) {
+                    _followedIds.update { it + interest.id }
+                }
+                _searchQuery.value = ""
+                refreshUiState()
+            }
         }
     }
 

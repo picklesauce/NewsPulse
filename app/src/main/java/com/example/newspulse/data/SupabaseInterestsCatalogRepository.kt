@@ -4,11 +4,17 @@ import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.domain.InterestsCatalogRepository
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
+import com.example.newspulse.domain.util.InterestSlug
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class SupabaseInterestsCatalogRepository(
     private val client: SupabaseRestClient
 ) : InterestsCatalogRepository {
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var cache: MutableList<Interest> = mutableListOf()
     private val cacheLock = Any()
 
@@ -41,12 +47,12 @@ class SupabaseInterestsCatalogRepository(
         }
     }
 
-    override suspend fun addCustomInterest(name: String, type: InterestType): Interest {
+    override fun addCustomInterest(name: String, type: InterestType): Interest {
         val existing = getAllInterests().find { it.name.equals(name, ignoreCase = true) }
         if (existing != null) return existing
 
         val interest = Interest(
-            id = "interest-${name.lowercase().replace(" ", "-")}",
+            id = InterestSlug.stableIdForName(name),
             type = type,
             name = name
         )
@@ -54,10 +60,43 @@ class SupabaseInterestsCatalogRepository(
             .put("id", interest.id)
             .put("type", type.name)
             .put("name", name)
-        client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
+        ioScope.launch {
+            client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
+        }
         synchronized(cacheLock) {
-            val idx = cache.indexOfFirst { it.id == interest.id }
-            if (idx >= 0) cache[idx] = interest else if (cache.none { it.id == interest.id }) cache.add(interest)
+            if (cache.none { it.id == interest.id }) cache.add(interest)
+        }
+        return interest
+    }
+
+    override suspend fun addCustomInterestPersisted(name: String, type: InterestType): Interest {
+        val existing = getAllInterests().find { it.name.equals(name, ignoreCase = true) }
+        if (existing != null) return existing
+
+        val interest = Interest(
+            id = InterestSlug.stableIdForName(name),
+            type = type,
+            name = name
+        )
+        val body = JSONObject()
+            .put("id", interest.id)
+            .put("type", type.name)
+            .put("name", name)
+        var ok = client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
+        if (!ok) {
+            val rows = client.select(
+                table = "interests",
+                columns = "id,type,name",
+                filters = mapOf("id" to "eq.${interest.id}"),
+                limit = 1,
+                useUserAuth = false
+            )
+            ok = rows.length() > 0
+        }
+        if (ok) {
+            synchronized(cacheLock) {
+                if (cache.none { it.id == interest.id }) cache.add(interest)
+            }
         }
         return interest
     }

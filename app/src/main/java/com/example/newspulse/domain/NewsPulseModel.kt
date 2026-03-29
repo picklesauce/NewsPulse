@@ -1,13 +1,14 @@
 package com.example.newspulse.domain
 
+import com.example.newspulse.data.SupabaseInterestsRepository
 import com.example.newspulse.domain.model.Article
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.model.ReadingHistoryItem
 import com.example.newspulse.domain.model.UserProfile
-import com.example.newspulse.data.SupabaseInterestsRepository
 import com.example.newspulse.domain.util.ArticleDeduplicator
 import com.example.newspulse.domain.util.DiscoverCategoryRelevance
+import com.example.newspulse.domain.util.InterestSlug
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -50,20 +51,25 @@ class NewsPulseModel(
     fun getAllInterests(): List<Interest> =
         interestsCatalogRepository.getAllInterests()
 
-    /** Creates a custom interest in the catalog, persists it, then follows it (awaited for Supabase). */
-    suspend fun addCustomInterest(name: String, type: InterestType): Interest {
+    /**
+     * Interest for a Discover grid category: uses the same id as [addCustomInterestPersisted]
+     * will create (catalog UUID/slug match), so follow state and Supabase rows stay aligned.
+     */
+    fun interestForDiscoverCategory(name: String, type: InterestType): Interest {
+        val existing = getAllInterests().find { it.name.equals(name, ignoreCase = true) }
+        if (existing != null) return existing
+        return Interest(
+            id = InterestSlug.stableIdForName(name),
+            type = type,
+            name = name
+        )
+    }
+
+    /** Creates a custom interest, adds it to the catalog, and auto-follows it. */
+    fun addCustomInterest(name: String, type: InterestType): Interest {
         val interest = interestsCatalogRepository.addCustomInterest(name, type)
-        interestsRepository.followInterestSuspend(interest.id)
+        interestsRepository.followInterest(interest.id)
         return interest
-    }
-
-    suspend fun unfollowInterestSuspend(id: String) {
-        interestsRepository.unfollowInterestSuspend(id)
-    }
-
-    /** Await Supabase (or mock) persistence — same path as toggling interests on the Interests screen. */
-    suspend fun followInterestSuspend(id: String) {
-        interestsRepository.followInterestSuspend(id)
     }
 
     fun followInterest(id: String) {
@@ -76,18 +82,6 @@ class NewsPulseModel(
 
     fun getFollowedInterestIds(): Set<String> = interestsRepository.getFollowedInterestIds()
 
-    /**
-     * True if this interest is followed, including when [Interest.id] is a Discover placeholder
-     * (e.g. `interest-technology`) but the catalog / DB row uses a different id (e.g. UUID).
-     */
-    fun isInterestFollowed(interest: Interest): Boolean {
-        val ids = getFollowedInterestIds()
-        if (interest.id in ids) return true
-        return getAllInterests().any {
-            it.name.equals(interest.name, ignoreCase = true) && it.id in ids
-        }
-    }
-
     fun getFollowedInterests(): List<Interest> {
         val ids = interestsRepository.getFollowedInterestIds()
         return interestsCatalogRepository.getAllInterests().filter { it.id in ids }
@@ -95,8 +89,52 @@ class NewsPulseModel(
 
     fun getFollowedInterestNames(): Set<String> = getFollowedInterests().map { it.name }.toSet()
 
+    fun getCloudUserId(): String? = authRepository?.getCurrentUserId()
+
+    fun shouldShowSignInForFollowFailure(): Boolean =
+        interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null
+
     fun setFollowedInterestIds(ids: Set<String>) {
         interestsRepository.setFollowedInterestIds(ids)
+    }
+
+    suspend fun followInterestSuspend(id: String): Boolean =
+        interestsRepository.followInterestSuspend(id)
+
+    suspend fun unfollowInterestSuspend(id: String): Boolean =
+        interestsRepository.unfollowInterestSuspend(id)
+
+    suspend fun setFollowedInterestIdsSuspend(ids: Set<String>): Boolean =
+        interestsRepository.setFollowedInterestIdsSuspend(ids)
+
+    suspend fun setOnboardingCompleteSuspend(): Boolean =
+        interestsRepository.setOnboardingCompleteSuspend()
+
+    /** Persist new catalog row (when needed) then follow; used for Interests / topic flows. */
+    suspend fun addCustomInterestPersisted(name: String, type: InterestType): Boolean {
+        val interest = interestsCatalogRepository.addCustomInterestPersisted(name, type)
+        return followInterestSuspend(interest.id)
+    }
+
+    /** Discover: ensure catalog + follow row exist in order (avoids Supabase FK / race issues). */
+    suspend fun followDiscoverInterest(interest: Interest): Boolean {
+        if (interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null) {
+            return false
+        }
+        return withContext(Dispatchers.IO) {
+            val resolved = interestsCatalogRepository.addCustomInterestPersisted(interest.name, interest.type)
+            followInterestSuspend(resolved.id)
+        }
+    }
+
+    /** Discover: remove follow row in Postgres / local store. */
+    suspend fun unfollowDiscoverInterest(interest: Interest): Boolean {
+        if (interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null) {
+            return false
+        }
+        return withContext(Dispatchers.IO) {
+            unfollowInterestSuspend(interest.id)
+        }
     }
 
     fun isOnboardingComplete(): Boolean = interestsRepository.isOnboardingComplete()
@@ -111,7 +149,7 @@ class NewsPulseModel(
         userPreferencesRepository.setUsername(username)
     }
 
-    /** Re-load [user_profiles] into prefs (e.g. Profile screen after Google sign-in). */
+    /** Re-load user profile fields from Supabase (used by Profile screen after OAuth). */
     suspend fun refreshProfileDisplayFromRemote() {
         userPreferencesRepository.refreshProfileFromRemote()
     }
@@ -132,11 +170,6 @@ class NewsPulseModel(
         return ok
     }
 
-    /**
-     * Loads followed interests, onboarding flag, and profile (username) from Supabase for the
-     * current session. Call after any successful sign-in so navigation and UI see DB state
-     * (avoids asking for topic selection when already completed).
-     */
     private suspend fun pullRemoteUserStateAfterAuth() {
         userPreferencesRepository.clearCachedProfileForAccountSwitch()
         withContext(Dispatchers.IO) {

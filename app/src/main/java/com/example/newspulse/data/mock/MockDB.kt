@@ -3,23 +3,24 @@ package com.example.newspulse.data.mock
 import com.example.newspulse.domain.model.Article
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
+import com.example.newspulse.domain.util.InterestSlug
 
 object MockDB {
     val interests: List<Interest> = buildList {
         listOf("USA", "Canada", "United Kingdom", "Germany", "Japan").forEach {
-            add(Interest("interest-${it.lowercase().replace(" ", "-")}", InterestType.Country, it))
+            add(Interest(InterestSlug.stableIdForName(it), InterestType.Country, it))
         }
         listOf("Donald Trump", "Elon Musk", "Taylor Swift", "Joe Biden", "Jeff Bezos").forEach {
-            add(Interest("interest-${it.lowercase().replace(" ", "-")}", InterestType.Person, it))
+            add(Interest(InterestSlug.stableIdForName(it), InterestType.Person, it))
         }
         listOf("Tesla", "Apple", "Google", "Microsoft", "Amazon").forEach {
-            add(Interest("interest-${it.lowercase().replace(" ", "-")}", InterestType.Company, it))
+            add(Interest(InterestSlug.stableIdForName(it), InterestType.Company, it))
         }
         listOf(
             "Technology", "Business", "Sports", "Entertainment",
             "Politics", "Science", "Health", "Climate"
         ).forEach {
-            add(Interest("interest-${it.lowercase().replace(" ", "-")}", InterestType.Topic, it))
+            add(Interest(InterestSlug.stableIdForName(it), InterestType.Topic, it))
         }
     }
 
