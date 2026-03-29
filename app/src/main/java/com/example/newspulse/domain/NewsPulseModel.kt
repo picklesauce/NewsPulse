@@ -1,5 +1,6 @@
 package com.example.newspulse.domain
 
+import com.example.newspulse.data.SupabaseInterestsRepository
 import com.example.newspulse.domain.model.Article
 import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
@@ -10,6 +11,7 @@ import com.example.newspulse.domain.util.DiscoverCategoryRelevance
 import com.example.newspulse.domain.util.InterestSlug
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -140,9 +142,40 @@ class NewsPulseModel(
         interestsRepository.setOnboardingComplete()
     }
 
+    fun getCurrentUserId(): String? = authRepository?.getCurrentUserId()
+
     fun getUsername(): String = userPreferencesRepository.getUsername()
     fun setUsername(username: String) {
         userPreferencesRepository.setUsername(username)
+    }
+
+    /** Re-load user profile fields from Supabase (used by Profile screen after OAuth). */
+    suspend fun refreshProfileDisplayFromRemote() {
+        userPreferencesRepository.refreshProfileFromRemote()
+    }
+
+    suspend fun signInWithGoogle(): AuthResult =
+        authRepository?.let { withContext(Dispatchers.IO) { it.signInWithGoogle() } }
+            ?: AuthResult(false, "Google sign-in is not available")
+
+    fun observeSupabaseAuthUserId(): Flow<String?> =
+        authRepository?.observeSupabaseAuthUserId() ?: emptyFlow()
+
+    suspend fun syncSupabaseAuthSessionToApp(): Boolean {
+        val ok = authRepository?.syncSupabaseAuthSessionToApp() == true
+        if (ok) {
+            pullRemoteUserStateAfterAuth()
+            onUserLoggedIn()
+        }
+        return ok
+    }
+
+    private suspend fun pullRemoteUserStateAfterAuth() {
+        userPreferencesRepository.clearCachedProfileForAccountSwitch()
+        withContext(Dispatchers.IO) {
+            (interestsRepository as? SupabaseInterestsRepository)?.awaitInitialSync()
+            userPreferencesRepository.refreshProfileFromRemote()
+        }
     }
 
     suspend fun logIn(email: String, password: String): AuthResult {
@@ -157,7 +190,12 @@ class NewsPulseModel(
                 val ok = pwdOk && (emailOk || usernameOk)
                 if (ok) AuthResult(true) else AuthResult(false, "Invalid email or password")
             }
-        if (result.success) onUserLoggedIn()
+        if (result.success) {
+            if (authRepository != null) {
+                pullRemoteUserStateAfterAuth()
+            }
+            onUserLoggedIn()
+        }
         return result
     }
 
@@ -167,12 +205,19 @@ class NewsPulseModel(
                 userPreferencesRepository.setStoredCredentials(email, password)
                 AuthResult(true)
             }
-        if (result.success) onUserLoggedIn()
+        if (result.success) {
+            if (authRepository != null) {
+                pullRemoteUserStateAfterAuth()
+            }
+            onUserLoggedIn()
+        }
         return result
     }
 
     fun signOut() {
         authRepository?.signOut()
+        userPreferencesRepository.clearCachedProfileForAccountSwitch()
+        interestsRepository.onUserChanged()
         savedArticlesRepository.clearState()
     }
 

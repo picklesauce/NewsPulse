@@ -5,6 +5,7 @@ interface InterestsRepository {
     fun setFollowedInterestIds(ids: Set<String>)
     fun followInterest(id: String)
     fun unfollowInterest(id: String)
+
     fun isOnboardingComplete(): Boolean
     fun setOnboardingComplete()
     fun onUserChanged() {}

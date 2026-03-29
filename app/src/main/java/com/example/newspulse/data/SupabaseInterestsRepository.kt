@@ -113,12 +113,23 @@ class SupabaseInterestsRepository(
 
     override suspend fun setOnboardingCompleteSuspend(): Boolean {
         val userId = userIdProvider() ?: return false
-        val body = JSONObject().put("onboarding_complete", true)
-        val ok = client.patch(
+        // Upsert matches RLS patterns that allow insert/merge for own row; PATCH alone is often denied for OAuth.
+        val upsertBody = JSONObject()
+            .put("user_id", userId)
+            .put("onboarding_complete", true)
+        var ok = client.insert(
             table = "user_profiles",
-            body = body,
-            filters = mapOf("user_id" to "eq.$userId")
+            body = upsertBody,
+            onConflict = "user_id",
+            upsert = true
         )
+        if (!ok) {
+            ok = client.patch(
+                table = "user_profiles",
+                body = JSONObject().put("onboarding_complete", true),
+                filters = mapOf("user_id" to "eq.$userId")
+            )
+        }
         if (ok) {
             synchronized(stateLock) { onboardingComplete = true }
         }

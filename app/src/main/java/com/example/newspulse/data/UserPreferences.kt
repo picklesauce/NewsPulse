@@ -36,6 +36,13 @@ class UserPreferences(context: Context) : UserPreferencesRepository {
             .apply()
     }
 
+    override fun clearCachedProfileForAccountSwitch() {
+        prefs.edit()
+            .remove(KEY_USERNAME)
+            .remove(KEY_MEMBER_SINCE)
+            .apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "user"
         private const val KEY_USERNAME = "username"

@@ -4,6 +4,12 @@ import com.example.newspulse.data.remote.SupabaseRestClient
 import com.example.newspulse.data.remote.SupabaseUserSession
 import com.example.newspulse.domain.AuthRepository
 import com.example.newspulse.domain.AuthResult
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -12,7 +18,8 @@ import java.util.UUID
 
 class SupabaseAuthRepository(
     private val client: SupabaseRestClient,
-    private val session: SupabaseUserSession
+    private val session: SupabaseUserSession,
+    private val supabase: SupabaseClient
 ) : AuthRepository {
     private val usersTable = "app_users"
 
@@ -119,21 +126,59 @@ class SupabaseAuthRepository(
         return AuthResult(true)
     }
 
+    override suspend fun signInWithGoogle(): AuthResult {
+        return try {
+            // Clear any persisted Supabase Auth session first. Otherwise observeSupabaseAuthUserId()
+            // can still emit the previous user while awaitingGoogleCompletion is true, and the app
+            // syncs the old account before the browser OAuth flow runs.
+            runCatching { supabase.auth.signOut() }
+            session.clear()
+            supabase.auth.signInWith(Google)
+            AuthResult(true)
+        } catch (e: Exception) {
+            AuthResult(false, e.message ?: "Google sign-in failed")
+        }
+    }
+
+    override fun observeSupabaseAuthUserId(): Flow<String?> =
+        supabase.auth.sessionStatus.map { status ->
+            when (status) {
+                is SessionStatus.Authenticated -> status.session.user?.id?.toString()
+                else -> null
+            }
+        }
+
+    override suspend fun syncSupabaseAuthSessionToApp(): Boolean {
+        val s = supabase.auth.currentSessionOrNull() ?: return false
+        val user = s.user ?: return false
+        val uid = user.id.toString()
+        if (uid.isBlank()) return false
+        session.accessToken = s.accessToken
+        session.userId = uid
+        val email = user.email ?: "user@placeholder.local"
+        ensureUserProfile(uid, email)
+        return true
+    }
+
     private fun looksLikeEmail(s: String): Boolean = "@" in s
 
     override fun signOut() {
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { supabase.auth.signOut() }
+        }
         session.clear()
     }
 
-    override fun getCurrentUserId(): String? = session.userId
+    override fun getCurrentUserId(): String? =
+        session.userId ?: supabase.auth.currentSessionOrNull()?.user?.id?.toString()
 
     private suspend fun ensureUserProfile(userId: String, email: String) {
+        // Use user JWT when present (Google / Supabase Auth). Anon-only calls fail typical RLS on user_profiles.
         val existing = client.select(
             table = "user_profiles",
             columns = "user_id",
             filters = mapOf("user_id" to "eq.$userId"),
-            limit = 1,
-            useUserAuth = false
+            limit = 1
         )
         if (existing.length() > 0) return
 
@@ -144,10 +189,6 @@ class SupabaseAuthRepository(
             .put("username", username)
             .put("member_since", memberSince)
             .put("onboarding_complete", false)
-        client.insert(
-            table = "user_profiles",
-            body = body,
-            useUserAuth = false
-        )
+        client.insert(table = "user_profiles", body = body)
     }
 }

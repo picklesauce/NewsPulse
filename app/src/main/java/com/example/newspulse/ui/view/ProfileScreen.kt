@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,6 +51,9 @@ fun ProfileScreen(
     navController: NavController,
     viewModel: ProfileViewModel = viewModel(factory = CompositionLocals.LocalViewModelFactory.current)
 ) {
+    LaunchedEffect(viewModel.sessionIdentity()) {
+        viewModel.reloadProfileFromRemote()
+    }
     val username = viewModel.username
     val memberSince = viewModel.memberSince
     val interests = viewModel.interests
@@ -108,7 +112,7 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = username,
+                        text = username.ifBlank { "—" },
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1C1B1F)

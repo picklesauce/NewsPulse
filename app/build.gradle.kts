@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 val localProperties = Properties().apply {
@@ -53,6 +54,12 @@ android {
 }
 
 dependencies {
+    val supabaseBom = "3.0.2"
+    val ktor = "3.0.3"
+
+    implementation(platform("io.github.jan-tennert.supabase:bom:$supabaseBom"))
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.ktor:ktor-client-android:$ktor")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -19,4 +19,8 @@ class FakeUserPreferencesRepository : UserPreferencesRepository {
         storedEmail = email
         storedPassword = password
     }
+
+    override fun clearCachedProfileForAccountSwitch() {
+        username = ""
+    }
 }

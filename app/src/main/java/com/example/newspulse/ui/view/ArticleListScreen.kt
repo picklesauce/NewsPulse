@@ -2,7 +2,6 @@ package com.example.newspulse.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +43,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -68,7 +70,19 @@ fun ArticleListScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var isSearchExpanded by remember { mutableStateOf(false) }
-    var filterExpanded by remember { mutableStateOf(false) }
+    var interestFilterExpanded by remember { mutableStateOf(false) }
+    var categoryFilterExpanded by remember { mutableStateOf(false) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onResumeRefresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Column(
         modifier = Modifier
@@ -160,116 +174,34 @@ fun ArticleListScreen(
             )
         }
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            val topicFilters = state.activeTopicFilters
-            val filterLabel = when {
-                topicFilters == null -> "All topics"
-                topicFilters.isEmpty() -> "No topics selected"
-                else -> topicFilters.sorted().joinToString(", ")
-            }
-
-            OutlinedTextField(
-                value = filterLabel,
-                onValueChange = {},
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = "Filter by topic"
-                    )
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedBorderColor = Color(0xFFE7E0EC),
-                    unfocusedTrailingIconColor = Color(0xFF79747E),
-                    cursorColor = Color(0xFF6750A4),
-                    focusedBorderColor = Color(0xFF6750A4),
-                    focusedTrailingIconColor = Color(0xFF6750A4),
-                    disabledBorderColor = Color(0xFFE7E0EC),
-                    disabledTextColor = Color(0xFF1C1B1F),
-                    disabledTrailingIconColor = Color(0xFF79747E)
-                ),
-                shape = RoundedCornerShape(12.dp),
-                enabled = false
-            )
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clickable { if (!filterExpanded) filterExpanded = true }
-            )
-            DropdownMenu(
-                expanded = filterExpanded,
-                onDismissRequest = { filterExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Checkbox(
-                                checked = state.activeTopicFilters == null,
-                                onCheckedChange = null
-                            )
-                            Text("All topics", fontWeight = FontWeight.Medium)
-                        }
-                    },
-                    onClick = { viewModel.onClearTopicFilters() }
-                )
-                HorizontalDivider()
-                state.selectedInterests.sorted().forEach { topic ->
-                    val isChecked = when (val f = state.activeTopicFilters) {
-                        null -> true
-                        else -> topic in f
-                    }
-                    DropdownMenuItem(
-                        text = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Checkbox(
-                                    checked = isChecked,
-                                    onCheckedChange = null
-                                )
-                                Text(topic)
-                            }
-                        },
-                        onClick = { viewModel.onToggleTopicFilter(topic) }
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            state.selectedInterests.forEach { topic ->
-                val isActive = when (val f = state.activeTopicFilters) {
-                    null -> true
-                    else -> topic in f
-                }
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isActive) Color(0xFF1C1B1F) else Color(0xFFF5F5F5),
-                    modifier = Modifier.clickable { viewModel.onToggleTopicFilter(topic) }
-                ) {
-                    Text(
-                        text = topic,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        fontSize = 14.sp,
-                        color = if (isActive) Color.White else Color(0xFF333333)
-                    )
-                }
-            }
+            HomeTopicFilterDropdown(
+                sectionTitle = state.interestFilterSectionTitle,
+                topicNames = state.followedInterestNames.sorted(),
+                activeFilters = state.activeInterestFilters,
+                expanded = interestFilterExpanded,
+                onExpandedChange = { interestFilterExpanded = it },
+                allSelectedLabel = "All interests",
+                emptyLabel = "No interests followed",
+                onClearFilters = { viewModel.onClearInterestFilters() },
+                onToggleTopic = { viewModel.onToggleInterestFilter(it) }
+            )
+            HomeTopicFilterDropdown(
+                sectionTitle = state.categoryFilterSectionTitle,
+                topicNames = state.followedCategoryNames.sorted(),
+                activeFilters = state.activeCategoryFilters,
+                expanded = categoryFilterExpanded,
+                onExpandedChange = { categoryFilterExpanded = it },
+                allSelectedLabel = "All categories",
+                emptyLabel = "No categories followed",
+                onClearFilters = { viewModel.onClearCategoryFilters() },
+                onToggleTopic = { viewModel.onToggleCategoryFilter(it) }
+            )
         }
 
         Column(
@@ -337,6 +269,112 @@ fun ArticleListScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeTopicFilterDropdown(
+    sectionTitle: String,
+    topicNames: List<String>,
+    activeFilters: Set<String>?,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    allSelectedLabel: String,
+    emptyLabel: String,
+    onClearFilters: () -> Unit,
+    onToggleTopic: (String) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = sectionTitle,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF49454F),
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            val summaryLabel = when {
+                topicNames.isEmpty() -> emptyLabel
+                activeFilters == null -> allSelectedLabel
+                activeFilters.isEmpty() -> "None selected"
+                else -> activeFilters.sorted().joinToString(", ")
+            }
+            OutlinedTextField(
+                value = summaryLabel,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null
+                    )
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = Color(0xFFE7E0EC),
+                    unfocusedTrailingIconColor = Color(0xFF79747E),
+                    cursorColor = Color(0xFF6750A4),
+                    focusedBorderColor = Color(0xFF6750A4),
+                    focusedTrailingIconColor = Color(0xFF6750A4),
+                    disabledBorderColor = Color(0xFFE7E0EC),
+                    disabledTextColor = Color(0xFF1C1B1F),
+                    disabledTrailingIconColor = Color(0xFF79747E)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                enabled = false
+            )
+            if (topicNames.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable {
+                            if (!expanded) onExpandedChange(true)
+                        }
+                )
+            }
+            DropdownMenu(
+                expanded = expanded && topicNames.isNotEmpty(),
+                onDismissRequest = { onExpandedChange(false) }
+            ) {
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Checkbox(
+                                checked = activeFilters == null,
+                                onCheckedChange = null
+                            )
+                            Text(allSelectedLabel, fontWeight = FontWeight.Medium)
+                        }
+                    },
+                    onClick = { onClearFilters() }
+                )
+                HorizontalDivider()
+                topicNames.forEach { topic ->
+                    val isChecked = when (activeFilters) {
+                        null -> true
+                        else -> topic in activeFilters
+                    }
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Checkbox(
+                                    checked = isChecked,
+                                    onCheckedChange = null
+                                )
+                                Text(topic)
+                            }
+                        },
+                        onClick = { onToggleTopic(topic) }
+                    )
+                }
             }
         }
     }

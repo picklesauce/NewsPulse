@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
@@ -17,6 +19,12 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     private val _selectedTopics = MutableStateFlow<Set<String>>(emptySet())
     val selectedTopics: StateFlow<Set<String>> = _selectedTopics.asStateFlow()
+
+    private val _saveError = MutableStateFlow<String?>(null)
+    val saveError: StateFlow<String?> = _saveError.asStateFlow()
+
+    private val _isSaving = MutableStateFlow(false)
+    val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
     val allTopics: List<String> get() = model.getAllInterests().map { it.name }
 
@@ -53,17 +61,38 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
         }
     }
 
-    suspend fun saveAndContinueNow(): Boolean {
-        val ids = model.getAllInterests()
-            .filter { it.name in _selectedTopics.value }
-            .map { it.id }
-            .toSet()
-        return model.setFollowedInterestIdsSuspend(ids) && model.setOnboardingCompleteSuspend()
+    /**
+     * Persists topic picks for Supabase without bulk delete/replace (OAuth JWT users often lack
+     * DELETE on followed_interests). Follows each interest individually, then marks onboarding done.
+     */
+    suspend fun saveAndContinueNow(): Boolean = withContext(Dispatchers.IO) {
+        val selected = _selectedTopics.value
+        if (selected.isEmpty()) return@withContext false
+        val catalog = model.getAllInterests()
+        val interests = selected.mapNotNull { name ->
+            catalog.find { it.name.equals(name, ignoreCase = true) }
+        }
+        if (interests.size != selected.size) return@withContext false
+        for (interest in interests) {
+            if (!model.followInterestSuspend(interest.id)) return@withContext false
+        }
+        model.setOnboardingCompleteSuspend()
     }
 
     fun saveAndContinue(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            if (saveAndContinueNow()) onSuccess()
+            _saveError.value = null
+            _isSaving.value = true
+            try {
+                if (saveAndContinueNow()) {
+                    onSuccess()
+                } else {
+                    _saveError.value =
+                        "Could not save your topics. Check your connection and try again."
+                }
+            } finally {
+                _isSaving.value = false
+            }
         }
     }
 }
