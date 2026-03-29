@@ -1,6 +1,7 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.domain.util.filterMatchingQuery
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
@@ -43,17 +45,25 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun addCustomInterest(type: InterestType) {
         val name = _searchQuery.value.trim()
         if (name.length < 2) return
-        val interest = model.addCustomInterest(name, type)
-        _selectedTopics.update { it + interest.name }
-        _searchQuery.value = ""
+        viewModelScope.launch {
+            if (model.addCustomInterestPersisted(name, type)) {
+                _selectedTopics.update { it + name }
+                _searchQuery.value = ""
+            }
+        }
     }
 
-    fun saveAndContinue() {
+    suspend fun saveAndContinueNow(): Boolean {
         val ids = model.getAllInterests()
             .filter { it.name in _selectedTopics.value }
             .map { it.id }
             .toSet()
-        model.setFollowedInterestIds(ids)
-        model.setOnboardingComplete()
+        return model.setFollowedInterestIdsSuspend(ids) && model.setOnboardingCompleteSuspend()
+    }
+
+    fun saveAndContinue(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            if (saveAndContinueNow()) onSuccess()
+        }
     }
 }

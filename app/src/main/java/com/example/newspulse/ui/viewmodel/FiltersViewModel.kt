@@ -1,12 +1,14 @@
 package com.example.newspulse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.newspulse.domain.NewsPulseModel
 import com.example.newspulse.domain.model.Interest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class FiltersViewModel(private val model: NewsPulseModel) : ViewModel() {
     val allInterests: List<Interest> get() = model.getAllInterests()
@@ -24,8 +26,13 @@ class FiltersViewModel(private val model: NewsPulseModel) : ViewModel() {
         }
     }
 
-    fun apply() {
-        model.setFollowedInterestIds(_selectedIds.value)
+    suspend fun applyFiltersNow(): Boolean =
+        model.setFollowedInterestIdsSuspend(_selectedIds.value)
+
+    fun apply(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            if (applyFiltersNow()) onSuccess()
+        }
     }
 
     fun reset() {
