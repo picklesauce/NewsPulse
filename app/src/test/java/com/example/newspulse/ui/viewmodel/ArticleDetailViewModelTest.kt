@@ -12,7 +12,13 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.After
 import org.junit.Test
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 
 /**
  * Unit tests for ArticleDetailViewModel.
@@ -24,7 +30,9 @@ import org.junit.Test
  * Note: These are pure unit tests with no Android instrumentation.
  * StateFlow updates are synchronous, so no test dispatchers are needed.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ArticleDetailViewModelTest {
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var model: NewsPulseModel
     private lateinit var viewModel: ArticleDetailViewModel
@@ -35,6 +43,7 @@ class ArticleDetailViewModelTest {
      */
     @Before
     fun setUp() {
+        Dispatchers.setMain(testDispatcher)
         model = NewsPulseModel(
             newsRepository = MockNewsRepository(),
             interestsRepository = MockInterestsRepository(),
@@ -44,6 +53,11 @@ class ArticleDetailViewModelTest {
             savedArticlesRepository = InMemorySavedArticlesRepository()
         )
         viewModel = ArticleDetailViewModel(model)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     // ========== Initial State Tests ==========
