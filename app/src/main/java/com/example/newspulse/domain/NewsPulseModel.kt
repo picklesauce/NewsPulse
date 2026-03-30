@@ -9,6 +9,7 @@ import com.example.newspulse.domain.model.UserProfile
 import com.example.newspulse.domain.util.ArticleDeduplicator
 import com.example.newspulse.domain.util.DiscoverCategoryRelevance
 import com.example.newspulse.domain.util.InterestSlug
+import com.example.newspulse.domain.util.RelatedArticlesLlmRanker
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -254,7 +255,7 @@ class NewsPulseModel(
         savedArticlesRepository.removeArticle(article)
     }
 
-    fun getRelatedArticles(articleId: String): List<Article> {
+    suspend fun getRelatedArticles(articleId: String): List<Article> {
         val article = getArticle(articleId) ?: return emptyList()
         val candidates = ArticleDeduplicator.dedupePreservingOrder(
             buildList {
@@ -263,7 +264,10 @@ class NewsPulseModel(
                 addAll(discoverCache.values)
             }
         )
-        return scoreRelatedArticles(article, candidates)
+
+        val heuristicRanked = scoreRelatedArticles(article, candidates)
+        val shortlist = heuristicRanked.take(15)
+        return RelatedArticlesLlmRanker.pickTop3(baseArticle = article, shortlist = shortlist)
     }
 
     fun searchArticles(query: String): List<Article> =
