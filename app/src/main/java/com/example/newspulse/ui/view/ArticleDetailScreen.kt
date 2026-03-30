@@ -2,7 +2,6 @@ package com.example.newspulse.ui.view
 
 import android.content.Context
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,20 +13,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -65,7 +59,6 @@ fun ArticleDetailScreen(
 ) {
     val article by articleDetailViewModel.article.collectAsState()
     val relatedArticles by articleDetailViewModel.relatedArticles.collectAsState()
-    val isLoadingRelated by articleDetailViewModel.isLoadingRelated.collectAsState()
 
     LaunchedEffect(articleId) {
         articleId?.let { articleDetailViewModel.loadArticle(it) }
@@ -90,7 +83,6 @@ fun ArticleDetailScreen(
             imageUrl = article?.imageUrl ?: "",
             readTime = article?.readTime ?: "",
             relatedArticles = relatedArticles,
-            isLoadingRelated = isLoadingRelated,
             onRelatedArticleClick = { id -> navController.navigate("articleDetail/$id") }
         )
 
@@ -184,7 +176,6 @@ fun ColumnScope.ArticleContent(
     imageUrl: String = "",
     readTime: String = "",
     relatedArticles: List<Article> = emptyList(),
-    isLoadingRelated: Boolean = false,
     onRelatedArticleClick: (String) -> Unit = {}
 ) {
     Surface(
@@ -226,42 +217,23 @@ fun ColumnScope.ArticleContent(
                 lineHeight = 24.sp,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-
-            // Related articles section
-            if (isLoadingRelated || relatedArticles.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider(color = Color(0xFFE7E0EC), thickness = 1.dp)
-                Spacer(modifier = Modifier.height(20.dp))
+            if (relatedArticles.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "You might also like",
+                    text = "Related articles",
                     color = Color(0xFF1C1B1F),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
-                if (isLoadingRelated) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(28.dp),
-                            color = Color(0xFF1C1B1F),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                } else {
-                    relatedArticles.forEach { related ->
-                        RelatedArticleRow(
-                            article = related,
-                            onClick = { onRelatedArticleClick(related.id) }
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
+                relatedArticles.forEach { related ->
+                    RelatedArticleRow(
+                        article = related,
+                        onClick = { onRelatedArticleClick(related.id) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -276,8 +248,8 @@ private fun RelatedArticleRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        color = Color(0xFFF8F8F8)
+        shape = RoundedCornerShape(8.dp),
+        color = Color(0xFFF5F5F5)
     ) {
         Row(
             modifier = Modifier
@@ -285,45 +257,17 @@ private fun RelatedArticleRow(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Thumbnail
-            if (article.imageUrl.isNotBlank()) {
-                AsyncImage(
-                    model = article.imageUrl,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(72.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE7E0EC)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Article,
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                        tint = Color(0xFF79747E)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = article.title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
                     color = Color(0xFF1C1B1F),
-                    maxLines = 3,
-                    lineHeight = 20.sp
+                    maxLines = 2
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${article.source} · ${article.hoursAgo}",
+                    text = "${article.source} · ${article.readTime} · ${article.hoursAgo}",
                     fontSize = 12.sp,
                     color = Color(0xFF79747E)
                 )
