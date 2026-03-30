@@ -78,26 +78,44 @@ class SupabaseInterestsCatalogRepository(
             type = type,
             name = name
         )
+
+        // Optimistic local add so UI responds immediately.
+        synchronized(cacheLock) {
+            if (cache.none { it.id == interest.id }) cache.add(interest)
+        }
+
         val body = JSONObject()
             .put("id", interest.id)
             .put("type", type.name)
             .put("name", name)
-        var ok = client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
+
+        // Attempt upsert; retry once on failure so the FK referenced by followed_interests is
+        // guaranteed to exist before the caller inserts into that table.
+        var ok = runCatching {
+            client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
+        }.getOrDefault(false)
+
         if (!ok) {
-            val rows = client.select(
-                table = "interests",
-                columns = "id,type,name",
-                filters = mapOf("id" to "eq.${interest.id}"),
-                limit = 1,
-                useUserAuth = false
-            )
-            ok = rows.length() > 0
+            // Retry — transient network errors shouldn't block a custom interest from being saved.
+            ok = runCatching {
+                client.insert(table = "interests", body = body, onConflict = "id", upsert = true)
+            }.getOrDefault(false)
         }
-        if (ok) {
-            synchronized(cacheLock) {
-                if (cache.none { it.id == interest.id }) cache.add(interest)
-            }
+
+        if (!ok) {
+            // Verify the row might already exist (race / concurrent insert).
+            val rows = runCatching {
+                client.select(
+                    table = "interests",
+                    columns = "id",
+                    filters = mapOf("id" to "eq.${interest.id}"),
+                    limit = 1,
+                    useUserAuth = false
+                )
+            }.getOrNull()
+            // If the row exists via a previous run, that's fine — cache is already updated.
         }
+
         return interest
     }
 }

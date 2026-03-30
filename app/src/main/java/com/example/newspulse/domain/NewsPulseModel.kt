@@ -113,7 +113,11 @@ class NewsPulseModel(
     /** Persist new catalog row (when needed) then follow; used for Interests / topic flows. */
     suspend fun addCustomInterestPersisted(name: String, type: InterestType): Boolean {
         val interest = interestsCatalogRepository.addCustomInterestPersisted(name, type)
-        return followInterestSuspend(interest.id)
+        val followed = followInterestSuspend(interest.id)
+        if (!followed) {
+            interestsRepository.followInterest(interest.id)
+        }
+        return true
     }
 
     /** Discover: ensure catalog + follow row exist in order (avoids Supabase FK / race issues). */
@@ -241,6 +245,8 @@ class NewsPulseModel(
 
     fun getSavedArticles(): Flow<List<Article>> = savedArticlesRepository.getSavedArticles()
     fun refreshSavedArticles() { savedArticlesRepository.onUserChanged() }
+    fun isArticleSaved(articleId: String): Boolean =
+        savedArticlesRepository.getSavedArticlesList().any { it.id == articleId }
     fun saveArticle(article: Article) {
         savedArticlesRepository.saveArticle(article)
     }

@@ -1,6 +1,53 @@
 -- Required RLS policies for app-managed (anon-key) persistence.
 -- Run this in Supabase SQL editor.
 
+-- interests (catalog of all available interests; app upserts custom ones here)
+alter table public.interests enable row level security;
+
+drop policy if exists "anon can read interests" on public.interests;
+create policy "anon can read interests"
+on public.interests
+for select
+to anon
+using (true);
+
+drop policy if exists "anon can insert interests" on public.interests;
+create policy "anon can insert interests"
+on public.interests
+for insert
+to anon
+with check (true);
+
+drop policy if exists "anon can update interests" on public.interests;
+create policy "anon can update interests"
+on public.interests
+for update
+to anon
+using (true)
+with check (true);
+
+drop policy if exists "authenticated can read interests" on public.interests;
+create policy "authenticated can read interests"
+on public.interests
+for select
+to authenticated
+using (true);
+
+drop policy if exists "authenticated can insert interests" on public.interests;
+create policy "authenticated can insert interests"
+on public.interests
+for insert
+to authenticated
+with check (true);
+
+drop policy if exists "authenticated can update interests" on public.interests;
+create policy "authenticated can update interests"
+on public.interests
+for update
+to authenticated
+using (true)
+with check (true);
+
 -- user_profiles
 alter table public.user_profiles enable row level security;
 drop policy if exists "anon can insert user_profiles" on public.user_profiles;

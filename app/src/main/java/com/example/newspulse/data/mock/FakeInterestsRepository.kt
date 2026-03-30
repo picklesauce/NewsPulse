@@ -5,7 +5,7 @@ import com.example.newspulse.domain.InterestsRepository
 /**
  * Fake implementation for previews. Pre-seeded with interests from MockDB.
  */
-class FakeInterestsRepository : InterestsRepository {
+open class FakeInterestsRepository : InterestsRepository {
     private var complete = false
     private val followedIds = MockDB.interests
         .filter { it.name in listOf("Technology", "Business") }

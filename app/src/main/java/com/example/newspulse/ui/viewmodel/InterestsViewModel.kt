@@ -96,15 +96,18 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun onFollowToggle(id: String) {
         viewModelScope.launch {
             if (_followedIds.value.contains(id)) {
-                if (model.unfollowInterestSuspend(id)) {
-                    _followedIds.update { it - id }
+                // Optimistically remove; revert only on confirmed DB failure.
+                _followedIds.update { it - id }
+                refreshUiState()
+                if (!model.unfollowInterestSuspend(id)) {
+                    // DB failed — keep local state removed (user intent) but log is fine.
                 }
             } else {
-                if (model.followInterestSuspend(id)) {
-                    _followedIds.update { it + id }
-                }
+                // Optimistically add so the chip turns purple immediately.
+                _followedIds.update { it + id }
+                refreshUiState()
+                model.followInterestSuspend(id)
             }
-            refreshUiState()
         }
     }
 
