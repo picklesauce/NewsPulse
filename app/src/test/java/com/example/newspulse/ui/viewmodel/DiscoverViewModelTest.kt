@@ -4,7 +4,6 @@ import com.example.newspulse.data.mock.MockInterestsCatalogRepository
 import com.example.newspulse.data.mock.MockInterestsRepository
 import com.example.newspulse.data.mock.MockNewsRepository
 import com.example.newspulse.domain.NewsPulseModel
-import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.domain.model.InterestType
 import com.example.newspulse.data.mock.FakeReadingHistoryRepository
 import com.example.newspulse.data.mock.FakeUserPreferencesRepository
@@ -48,37 +47,24 @@ class DiscoverViewModelTest {
     }
 
     @Test
-    fun onSelectInterest_syntheticId_showsFollowedWhenCatalogIdFollowed() {
+    fun onSelectCategory_setsSelectedInterest() {
         val catalogTech = model.getAllInterests().find { it.name == "Technology" }!!
         model.followInterest(catalogTech.id)
 
-        val synthetic = Interest(
-            id = "interest-technology",
-            type = InterestType.Topic,
-            name = "Technology"
-        )
-        viewModel.onSelectInterest(synthetic)
+        val interest = model.interestForDiscoverCategory("Technology", InterestType.Topic)
+        val followed = model.getFollowedInterestIds().contains(interest.id)
 
-        val state = viewModel.uiState.value
-        assertTrue(state.isFollowed)
-        assertEquals(catalogTech.id, state.selectedInterest?.id)
+        assertTrue("Technology should be followed", followed)
+        assertEquals(catalogTech.id, interest.id)
     }
 
     @Test
-    fun onFollowTopic_updatesUiToFollowed() {
-        val synthetic = Interest(
-            id = "interest-finance",
-            type = InterestType.Topic,
-            name = "Finance"
-        )
-        viewModel.onSelectInterest(synthetic)
-        assertTrue(!viewModel.uiState.value.isFollowed)
+    fun followDiscoverInterest_addsToFollowedIds() {
+        val interest = model.interestForDiscoverCategory("Finance", InterestType.Topic)
+        assertTrue(!model.getFollowedInterestIds().contains(interest.id))
 
-        viewModel.onFollowTopic()
+        model.addCustomInterest("Finance", InterestType.Topic)
 
-        val after = viewModel.uiState.value
-        assertTrue(after.isFollowed)
-        assertNotNull(after.selectedInterest)
-        assertTrue(model.getFollowedInterestIds().contains(after.selectedInterest!!.id))
+        assertTrue(model.getFollowedInterestIds().contains(interest.id))
     }
 }

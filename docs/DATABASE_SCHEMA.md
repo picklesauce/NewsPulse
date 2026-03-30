@@ -289,3 +289,80 @@ ORDER BY rh.read_at_millis DESC;
 - If migrating to Supabase Auth later, `user_profiles.user_id` can instead link to `auth.users.id`
 - Denormalized fields (like `reading_history.title`) are included for performance but can be removed if you prefer to always join with `articles`
 
+
+# Updated Database Schema:
+
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.app_users (
+  id uuid NOT NULL,
+  email text NOT NULL UNIQUE,
+  password text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT app_users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.article_interests (
+  article_id text NOT NULL,
+  interest_id text NOT NULL,
+  CONSTRAINT article_interests_pkey PRIMARY KEY (article_id, interest_id),
+  CONSTRAINT article_interests_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.articles(id),
+  CONSTRAINT article_interests_interest_id_fkey FOREIGN KEY (interest_id) REFERENCES public.interests(id)
+);
+CREATE TABLE public.articles (
+  id text NOT NULL,
+  title text NOT NULL,
+  source text NOT NULL,
+  url text DEFAULT ''::text,
+  published_at bigint NOT NULL,
+  summary text DEFAULT ''::text,
+  image_url text DEFAULT ''::text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT articles_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.followed_interests (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  interest_id text NOT NULL,
+  followed_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT followed_interests_pkey PRIMARY KEY (id),
+  CONSTRAINT followed_interests_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.user_profiles(user_id),
+  CONSTRAINT followed_interests_interest_id_fkey FOREIGN KEY (interest_id) REFERENCES public.interests(id)
+);
+CREATE TABLE public.interests (
+  id text NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['Country'::text, 'Person'::text, 'Company'::text, 'Topic'::text])),
+  name text NOT NULL UNIQUE,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT interests_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.reading_history (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  article_id text NOT NULL,
+  title text NOT NULL,
+  read_at_millis bigint NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT reading_history_pkey PRIMARY KEY (id),
+  CONSTRAINT reading_history_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.user_profiles(user_id),
+  CONSTRAINT reading_history_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.articles(id)
+);
+CREATE TABLE public.saved_articles (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  article_id text NOT NULL,
+  saved_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT saved_articles_pkey PRIMARY KEY (id),
+  CONSTRAINT saved_articles_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.articles(id),
+  CONSTRAINT saved_articles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.user_profiles(user_id)
+);
+CREATE TABLE public.user_profiles (
+  user_id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  username text NOT NULL,
+  member_since text NOT NULL,
+  onboarding_complete boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_profiles_pkey PRIMARY KEY (user_id)
+);

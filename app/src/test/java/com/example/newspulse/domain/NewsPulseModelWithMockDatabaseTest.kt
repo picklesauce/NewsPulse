@@ -140,7 +140,7 @@ class NewsPulseModelWithMockDatabaseTest {
     private class DatabaseBackedInterestsCatalogRepository(private val db: DatabaseInterface) : InterestsCatalogRepository {
         override fun getAllInterests(): List<Interest> = runBlocking { db.getAllInterests() }
 
-        override suspend fun addCustomInterest(name: String, type: InterestType): Interest =
+        override fun addCustomInterest(name: String, type: InterestType): Interest =
             Interest(
                 id = "interest-${name.lowercase().replace(" ", "-")}",
                 type = type,

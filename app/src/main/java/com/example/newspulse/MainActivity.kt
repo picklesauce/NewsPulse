@@ -20,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.newspulse.data.ArticleDiskCache
+import com.example.newspulse.data.SavedArticlesDiskCache
 import com.example.newspulse.data.LocalAuthRepository
 import com.example.newspulse.data.NewsApiRepository
 import com.example.newspulse.data.ReadingHistoryPreferences
@@ -116,7 +117,7 @@ class MainActivity : ComponentActivity() {
             interestsRepository = SupabaseInterestsRepository(restClient, resolveUserId)
             userPreferencesRepository = SupabaseUserPreferencesRepository(this, restClient, resolveUserId)
             readingHistoryRepository = SupabaseReadingHistoryRepository(restClient, resolveUserId)
-            savedArticlesRepository = SupabaseSavedArticlesRepository(restClient, resolveUserId)
+            savedArticlesRepository = SupabaseSavedArticlesRepository(restClient, resolveUserId, SavedArticlesDiskCache(this))
             authRepository = SupabaseAuthRepository(
                 client = restClient,
                 session = userSession,

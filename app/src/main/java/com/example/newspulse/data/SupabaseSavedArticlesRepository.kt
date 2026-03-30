@@ -15,7 +15,8 @@ import java.util.UUID
 
 class SupabaseSavedArticlesRepository(
     private val client: SupabaseRestClient,
-    private val userIdProvider: () -> String?
+    private val userIdProvider: () -> String?,
+    private val diskCache: SavedArticlesDiskCache? = null
 ) : SavedArticlesRepository {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val saved = MutableStateFlow<List<Article>>(emptyList())
@@ -56,6 +57,7 @@ class SupabaseSavedArticlesRepository(
         }
 
         val byId = mutableMapOf<String, Article>()
+
         val inClause = idsInOrder.joinToString(",") { "\"$it\"" }
         val articles = client.select(
             table = "articles",
@@ -79,21 +81,32 @@ class SupabaseSavedArticlesRepository(
         }
 
         for (id in idsInOrder) {
-            if (id !in byId) {
-                localArticleCache[id]?.let { byId[id] = it }
+            if (id !in byId || byId[id]?.summary.isNullOrBlank()) {
+                val fromDisk = diskCache?.get(id)
+                if (fromDisk != null) {
+                    byId[id] = fromDisk
+                } else {
+                    localArticleCache[id]?.let { byId[id] = it }
+                }
             }
         }
 
-        byId.values.forEach { localArticleCache[it.id] = it }
+        byId.values.forEach {
+            localArticleCache[it.id] = it
+            diskCache?.put(it)
+        }
+
         saved.value = idsInOrder.mapNotNull { byId[it] }
     }
 
     override fun saveArticle(article: Article) {
         val userId = userIdProvider() ?: return
         localArticleCache[article.id] = article
+        diskCache?.put(article)
+
         ioScope.launch {
-            val articleStored = ensureArticleExists(article)
-            if (!articleStored) return@launch
+            ensureArticleExists(article)
+
             client.delete(
                 table = "saved_articles",
                 filters = mapOf(
@@ -113,6 +126,8 @@ class SupabaseSavedArticlesRepository(
     override fun removeArticle(article: Article) {
         val userId = userIdProvider() ?: return
         localArticleCache.remove(article.id)
+        diskCache?.remove(article.id)
+
         ioScope.launch {
             client.delete(
                 table = "saved_articles",
@@ -125,7 +140,7 @@ class SupabaseSavedArticlesRepository(
         }
     }
 
-    private suspend fun ensureArticleExists(article: Article): Boolean {
+    private suspend fun ensureArticleExists(article: Article) {
         val body = JSONObject()
             .put("id", article.id)
             .put("title", article.title)
@@ -134,7 +149,7 @@ class SupabaseSavedArticlesRepository(
             .put("published_at", article.publishedAt)
             .put("summary", article.summary)
             .put("image_url", article.imageUrl)
-        return client.insert(
+        client.insert(
             table = "articles",
             body = body,
             onConflict = "id",

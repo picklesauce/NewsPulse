@@ -20,17 +20,26 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +50,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.newspulse.domain.model.Interest
 import com.example.newspulse.ui.CompositionLocals
 import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
@@ -56,8 +66,39 @@ fun ProfileScreen(
     }
     val username = viewModel.username
     val memberSince = viewModel.memberSince
-    val interests = viewModel.interests
+    val groupedInterests = viewModel.groupedInterests
     val readingHistory = viewModel.readingHistory
+
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editingName by remember { mutableStateOf("") }
+
+    if (showEditDialog) {
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Username") },
+            text = {
+                OutlinedTextField(
+                    value = editingName,
+                    onValueChange = { editingName = it },
+                    singleLine = true,
+                    placeholder = { Text("Enter new username") },
+                    shape = RoundedCornerShape(12.dp)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateUsername(editingName)
+                        showEditDialog = false
+                    },
+                    enabled = editingName.trim().isNotBlank()
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -110,13 +151,29 @@ fun ProfileScreen(
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = username.ifBlank { "—" },
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1C1B1F)
-                    )
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = username.ifBlank { "—" },
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1C1B1F)
+                        )
+                        IconButton(
+                            onClick = {
+                                editingName = username
+                                showEditDialog = true
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit username",
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFF79747E)
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Member since $memberSince",
@@ -131,35 +188,51 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "YOUR INTERESTS",
+                text = "YOUR INTERESTS & CATEGORIES",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1C1B1F),
                 letterSpacing = 0.5.sp
             )
             Spacer(modifier = Modifier.height(12.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                interests.forEach { topic ->
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color(0xFFF5F5F5),
-                        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+            if (groupedInterests.isEmpty()) {
+                Text(
+                    text = "No interests selected yet",
+                    fontSize = 14.sp,
+                    color = Color(0xFF79747E),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            } else {
+                groupedInterests.forEach { (type, interests) ->
+                    Text(
+                        text = type.name.uppercase(),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF79747E),
+                        letterSpacing = 0.5.sp,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = topic,
-                                fontSize = 14.sp,
-                                color = Color(0xFF333333)
-                            )
+                        interests.forEach { interest ->
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color(0xFFF5F5F5),
+                                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+                            ) {
+                                Text(
+                                    text = interest.name,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF333333),
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
