@@ -256,7 +256,14 @@ class NewsPulseModel(
 
     fun getRelatedArticles(articleId: String): List<Article> {
         val article = getArticle(articleId) ?: return emptyList()
-        return scoreRelatedArticles(article, getFeed())
+        val candidates = ArticleDeduplicator.dedupePreservingOrder(
+            buildList {
+                addAll(getFeed())
+                addAll(savedArticlesRepository.getSavedArticlesList())
+                addAll(discoverCache.values)
+            }
+        )
+        return scoreRelatedArticles(article, candidates)
     }
 
     fun searchArticles(query: String): List<Article> =
