@@ -35,7 +35,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,14 +52,6 @@ import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.ui.viewmodel.SignUpViewModel
 
-private val SignUpDarkBg = Color(0xFF0F0F1A)
-private val SignUpAccent = Color(0xFF6C63FF)
-private val SignUpAccentEnd = Color(0xFFE040FB)
-private val SignUpFieldBorder = Color(0xFFE0E0E0)
-private val SignUpHint = Color(0xFF9E9E9E)
-private val SignUpLabel = Color(0xFF1C1B1F)
-private val SignUpLinkBlue = Color(0xFF2979FF)
-
 @Composable
 fun SignUpScreen(
     navController: NavController,
@@ -71,7 +62,7 @@ fun SignUpScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SignUpDarkBg)
+            .background(NewsPulseAuthColors.screenBg)
             .statusBarsPadding()
     ) {
         Column(
@@ -87,9 +78,9 @@ fun SignUpScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Surface(
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = Color.White,
-                shadowElevation = 8.dp,
+                shadowElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
@@ -97,12 +88,12 @@ fun SignUpScreen(
                         text = "Create Account",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = SignUpLabel
+                        color = NewsPulseAuthColors.primaryText
                     )
                     Text(
                         text = "Sign up to get started",
                         fontSize = 13.sp,
-                        color = SignUpHint,
+                        color = NewsPulseAuthColors.secondaryText,
                         modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                     )
 
@@ -112,9 +103,9 @@ fun SignUpScreen(
                         onValueChange = { viewModel.updateUsername(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("Choose a username", color = SignUpHint) },
+                        placeholder = { Text("Choose a username", color = NewsPulseAuthColors.secondaryText) },
                         leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = SignUpHint)
+                            Icon(Icons.Default.Person, contentDescription = null, tint = NewsPulseAuthColors.secondaryText)
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = authFieldColors()
@@ -128,9 +119,9 @@ fun SignUpScreen(
                         onValueChange = { viewModel.updateEmail(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("you@example.com", color = SignUpHint) },
+                        placeholder = { Text("you@example.com", color = NewsPulseAuthColors.secondaryText) },
                         leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = SignUpHint)
+                            Icon(Icons.Default.Email, contentDescription = null, tint = NewsPulseAuthColors.secondaryText)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         shape = RoundedCornerShape(12.dp),
@@ -145,16 +136,16 @@ fun SignUpScreen(
                         onValueChange = { viewModel.updatePassword(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("Create a password", color = SignUpHint) },
+                        placeholder = { Text("Create a password", color = NewsPulseAuthColors.secondaryText) },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = SignUpHint)
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = NewsPulseAuthColors.secondaryText)
                         },
                         trailingIcon = {
                             IconButton(onClick = { viewModel.togglePasswordVisible() }) {
                                 Icon(
                                     imageVector = if (state.passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = if (state.passwordVisible) "Hide password" else "Show password",
-                                    tint = SignUpHint
+                                    tint = NewsPulseAuthColors.secondaryText
                                 )
                             }
                         },
@@ -172,16 +163,16 @@ fun SignUpScreen(
                         onValueChange = { viewModel.updateConfirmPassword(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("Confirm your password", color = SignUpHint) },
+                        placeholder = { Text("Confirm your password", color = NewsPulseAuthColors.secondaryText) },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = SignUpHint)
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = NewsPulseAuthColors.secondaryText)
                         },
                         trailingIcon = {
                             IconButton(onClick = { viewModel.toggleConfirmPasswordVisible() }) {
                                 Icon(
                                     imageVector = if (state.confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = if (state.confirmPasswordVisible) "Hide password" else "Show password",
-                                    tint = SignUpHint
+                                    tint = NewsPulseAuthColors.secondaryText
                                 )
                             }
                         },
@@ -202,41 +193,28 @@ fun SignUpScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Gradient "Sign Up" button
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp)
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = listOf(SignUpAccent, SignUpAccentEnd)
-                                ),
-                                shape = RoundedCornerShape(14.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Button(
-                            onClick = {
-                                viewModel.signUp { success ->
-                                    if (success) {
-                                        navController.navigate("topicSelection") {
-                                            popUpTo("signup") { inclusive = true }
-                                        }
+                    Button(
+                        onClick = {
+                            viewModel.signUp { success ->
+                                if (success) {
+                                    navController.navigate("topicSelection") {
+                                        popUpTo("signup") { inclusive = true }
                                     }
                                 }
-                            },
-                            modifier = Modifier.fillMaxSize(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                            elevation = null
-                        ) {
-                            Text(
-                                text = "Sign Up",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                        }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = NewsPulseAuthColors.accent)
+                    ) {
+                        Text(
+                            text = "Sign Up",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -250,18 +228,18 @@ fun SignUpScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(1.dp)
-                                .background(SignUpFieldBorder)
+                                .background(NewsPulseAuthColors.border)
                         )
                         Text(
                             text = "  or  ",
                             fontSize = 13.sp,
-                            color = SignUpHint
+                            color = NewsPulseAuthColors.secondaryText
                         )
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(1.dp)
-                                .background(SignUpFieldBorder)
+                                .background(NewsPulseAuthColors.border)
                         )
                     }
 
@@ -275,13 +253,13 @@ fun SignUpScreen(
                         Text(
                             text = "Already have an account? ",
                             fontSize = 14.sp,
-                            color = SignUpLabel
+                            color = NewsPulseAuthColors.primaryText
                         )
                         Text(
                             text = "Log In",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = SignUpLinkBlue,
+                            color = NewsPulseAuthColors.accent,
                             modifier = Modifier.clickable {
                                 navController.navigate("login") {
                                     popUpTo("signup") { inclusive = true }
@@ -296,7 +274,7 @@ fun SignUpScreen(
             Text(
                 text = "By signing up, you agree to our Terms & Privacy",
                 fontSize = 12.sp,
-                color = Color(0xFF6B7280),
+                color = NewsPulseAuthColors.secondaryText,
                 textAlign = TextAlign.Center
             )
         }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -56,12 +55,16 @@ import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.ui.viewmodel.LoginViewModel
 
-private val DarkBg = Color(0xFF0F0F1A)
-private val CardBg = Color(0xFFFFFFFF)
-private val AccentPurple = Color(0xFF6C63FF)
-private val FieldBorder = Color(0xFFE0E0E0)
-private val HintGray = Color(0xFF9E9E9E)
-private val LabelDark = Color(0xFF1C1B1F)
+/** Matches ArticleListScreen / Home palette for a consistent auth experience. */
+internal object NewsPulseAuthColors {
+    val screenBg = Color(0xFFF8F8FC)
+    val primaryText = Color(0xFF1C1B1F)
+    val secondaryText = Color(0xFF79747E)
+    val labelText = Color(0xFF49454F)
+    val border = Color(0xFFE7E0EC)
+    val accent = Color(0xFF6750A4)
+    val logoSurface = Color(0xFFE8DEF8)
+}
 @Composable
 fun LoginScreen(
     navController: NavController,
@@ -72,7 +75,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBg)
+            .background(NewsPulseAuthColors.screenBg)
             .statusBarsPadding()
     ) {
         Column(
@@ -87,9 +90,9 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = CardBg,
-                shadowElevation = 8.dp,
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White,
+                shadowElevation = 2.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
@@ -97,12 +100,12 @@ fun LoginScreen(
                         text = "Log In",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = LabelDark
+                        color = NewsPulseAuthColors.primaryText
                     )
                     Text(
                         text = "Enter your credentials to continue",
                         fontSize = 13.sp,
-                        color = HintGray,
+                        color = NewsPulseAuthColors.secondaryText,
                         modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                     )
 
@@ -123,21 +126,21 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, FieldBorder)
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, NewsPulseAuthColors.border)
                     ) {
                         if (state.isGoogleLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(22.dp),
                                 strokeWidth = 2.dp,
-                                color = AccentPurple
+                                color = NewsPulseAuthColors.accent
                             )
                         } else {
                             Text(
                                 text = "Continue with Google",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = LabelDark
+                                color = NewsPulseAuthColors.primaryText
                             )
                         }
                     }
@@ -153,18 +156,18 @@ fun LoginScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(1.dp)
-                                .background(FieldBorder)
+                                .background(NewsPulseAuthColors.border)
                         )
                         Text(
                             text = "  or  ",
                             fontSize = 13.sp,
-                            color = HintGray
+                            color = NewsPulseAuthColors.secondaryText
                         )
                         Box(
                             modifier = Modifier
                                 .weight(1f)
                                 .height(1.dp)
-                                .background(FieldBorder)
+                                .background(NewsPulseAuthColors.border)
                         )
                     }
 
@@ -176,9 +179,9 @@ fun LoginScreen(
                         onValueChange = { viewModel.updateEmail(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("you@example.com or yourname", color = HintGray) },
+                        placeholder = { Text("you@example.com or yourname", color = NewsPulseAuthColors.secondaryText) },
                         leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = HintGray)
+                            Icon(Icons.Default.Email, contentDescription = null, tint = NewsPulseAuthColors.secondaryText)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         shape = RoundedCornerShape(12.dp),
@@ -196,7 +199,7 @@ fun LoginScreen(
                         Text(
                             text = "Forgot?",
                             fontSize = 13.sp,
-                            color = AccentPurple,
+                            color = NewsPulseAuthColors.accent,
                             fontWeight = FontWeight.Medium
                         )
                     }
@@ -205,16 +208,16 @@ fun LoginScreen(
                         onValueChange = { viewModel.updatePassword(it) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        placeholder = { Text("Enter your password", color = HintGray) },
+                        placeholder = { Text("Enter your password", color = NewsPulseAuthColors.secondaryText) },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = HintGray)
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = NewsPulseAuthColors.secondaryText)
                         },
                         trailingIcon = {
                             IconButton(onClick = { viewModel.togglePasswordVisible() }) {
                                 Icon(
                                     imageVector = if (state.passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = if (state.passwordVisible) "Hide password" else "Show password",
-                                    tint = HintGray
+                                    tint = NewsPulseAuthColors.secondaryText
                                 )
                             }
                         },
@@ -250,8 +253,8 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = NewsPulseAuthColors.accent)
                     ) {
                         Text(
                             text = "Log In",
@@ -268,14 +271,14 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, FieldBorder)
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, NewsPulseAuthColors.border)
                     ) {
                         Text(
                             text = "Sign up",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = LabelDark
+                            color = NewsPulseAuthColors.primaryText
                         )
                     }
                 }
@@ -285,7 +288,7 @@ fun LoginScreen(
             Text(
                 text = "Protected by industry-standard encryption",
                 fontSize = 12.sp,
-                color = Color(0xFF6B7280),
+                color = NewsPulseAuthColors.secondaryText,
                 textAlign = TextAlign.Center
             )
         }
@@ -297,8 +300,8 @@ internal fun AppBranding(subtitle: String) {
     Box(
         modifier = Modifier
             .size(72.dp)
-            .clip(CircleShape)
-            .background(Color.White),
+            .clip(RoundedCornerShape(16.dp))
+            .background(NewsPulseAuthColors.logoSurface),
         contentAlignment = Alignment.Center
     ) {
         Text(text = "📰", fontSize = 30.sp)
@@ -306,15 +309,15 @@ internal fun AppBranding(subtitle: String) {
     Spacer(modifier = Modifier.height(12.dp))
     Text(
         text = "NewsPulse",
-        fontSize = 26.sp,
+        fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
-        color = Color.White
+        color = NewsPulseAuthColors.primaryText
     )
     Spacer(modifier = Modifier.height(4.dp))
     Text(
         text = subtitle,
         fontSize = 14.sp,
-        color = Color(0xFFB0BEC5)
+        color = NewsPulseAuthColors.secondaryText
     )
 }
 
@@ -322,20 +325,24 @@ internal fun AppBranding(subtitle: String) {
 internal fun AuthFieldLabel(label: String) {
     Text(
         text = label,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.Medium,
-        color = LabelDark,
-        modifier = Modifier.padding(bottom = 6.dp)
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = NewsPulseAuthColors.labelText,
+        modifier = Modifier.padding(bottom = 4.dp)
     )
 }
 
 @Composable
 internal fun authFieldColors() = OutlinedTextFieldDefaults.colors(
-    unfocusedBorderColor = FieldBorder,
-    focusedBorderColor = AccentPurple,
-    unfocusedContainerColor = Color(0xFFF9F9F9),
+    unfocusedBorderColor = NewsPulseAuthColors.border,
+    focusedBorderColor = NewsPulseAuthColors.accent,
+    unfocusedContainerColor = Color.White,
     focusedContainerColor = Color.White,
-    cursorColor = AccentPurple
+    cursorColor = NewsPulseAuthColors.accent,
+    unfocusedLeadingIconColor = NewsPulseAuthColors.secondaryText,
+    focusedLeadingIconColor = NewsPulseAuthColors.accent,
+    unfocusedTrailingIconColor = NewsPulseAuthColors.secondaryText,
+    focusedTrailingIconColor = NewsPulseAuthColors.accent
 )
 
 @Preview(showBackground = true)
