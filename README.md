@@ -45,7 +45,7 @@ We are a group of CS students who are the absolute best at building great projec
 
 * [Team Contract](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Contract)
 * [Project Proposal](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Project-Proposal)
-* [Meeting Minutes] https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Meetings
+* [Meeting Minutes (Team Meetings)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Meetings)
 * [Team Reflections](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Reflections)
 
 ---
