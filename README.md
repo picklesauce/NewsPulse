@@ -73,8 +73,8 @@ We are a group of CS students who are the absolute best at building great projec
 **For the TA**
 
 * **Build:** `./gradlew assembleDebug` should succeed; run the app on an emulator or device as above.
-* **API key:** If `NEWSAPI_AI_KEY` is unset, the app still runs with mock data — note when grading live article features.
-* **Tests:** `./gradlew testDebugUnitTest` — unit tests for selected ViewModels and domain utilities.
-* **Optional:** See [docs/newsapifix.md](docs/newsapifix.md) for NewsAPI-related behavior notes if something behaves unexpectedly with the live API.
+* **API key:** If `NEWSAPI_AI_KEY` is unset, the app still runs with mock data - note when grading live article features.
+* **Tests:** `./gradlew testDebugUnitTest` - unit tests for selected ViewModels and domain utilities.
+
 
 ---
