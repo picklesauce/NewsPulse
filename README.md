@@ -29,17 +29,15 @@ We are a group of CS students who are the absolute best at building great projec
 
 ### Demo video
 
-* [Project demo on YouTube](https://www.youtube.com/) 
+* [TODO - MAKE AND LINK VIDEO](https://www.youtube.com/) 
 
 ### Acknowledgements
 
-* [NewsAPI.ai / Event Registry](https://newsapi.ai/) for article data (API key via `local.properties`; see **Getting Started**).
-* Course staff and TAs for feedback and CS346 structure.
-* Jetpack Compose, Kotlin, and Android Open Source Project libraries used in this app.
+* [Acknowledgements](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Acknowledgements)
 
 ### Releases
 
-* [GitLab Releases](-/releases) — tagged builds and release notes for grading and deployment.
+* [TODO - ADD RELEASE DOCS]
 
 ---
 
@@ -55,8 +53,7 @@ We are a group of CS students who are the absolute best at building great projec
 
 ## 3. User Guide
 
-### A brief overview
-
+* [Getting Started (TODO)]
 * [Usage Guide](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Usage-Guide)
 
 ---
