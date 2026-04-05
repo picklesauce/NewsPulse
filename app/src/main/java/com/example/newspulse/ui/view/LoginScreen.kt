@@ -113,7 +113,7 @@ fun LoginScreen(
                         if (state.oauthNavigateHome) {
                             viewModel.consumeOAuthNavigation()
                             navController.navigate(
-                                if (viewModel.isOnboardingComplete()) "home" else "topicSelection"
+                                if (viewModel.shouldSkipTopicSelection()) "home" else "topicSelection"
                             ) {
                                 popUpTo("login") { inclusive = true }
                             }
@@ -190,19 +190,7 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        AuthFieldLabel("Password")
-                        Text(
-                            text = "Forgot?",
-                            fontSize = 13.sp,
-                            color = NewsPulseAuthColors.accent,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    AuthFieldLabel("Password")
                     OutlinedTextField(
                         value = state.password,
                         onValueChange = { viewModel.updatePassword(it) },
@@ -243,7 +231,7 @@ fun LoginScreen(
                             viewModel.logIn { success ->
                                 if (success) {
                                     navController.navigate(
-                                        if (viewModel.isOnboardingComplete()) "home" else "topicSelection"
+                                        if (viewModel.shouldSkipTopicSelection()) "home" else "topicSelection"
                                     ) {
                                         popUpTo("login") { inclusive = true }
                                     }

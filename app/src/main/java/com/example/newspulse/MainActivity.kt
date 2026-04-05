@@ -276,7 +276,7 @@ class MainActivity : ComponentActivity() {
         model: NewsPulseModel
     ): String = when {
         useSupabase && authRepository.getCurrentUserId() == null -> "login"
-        model.isOnboardingComplete() -> "home"
+        model.shouldSkipTopicSelection() -> "home"
         useSupabase && authRepository.getCurrentUserId() != null -> "topicSelection"
         else -> "login"
     }

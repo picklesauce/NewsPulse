@@ -45,6 +45,7 @@ class MockDatabase(
             source = "Tech News",
             publishedAt = now - 3600000,
             summary = "A sample article about technology.",
+            imageUrl = "https://picsum.photos/seed/${a1}/800/450",
             interests = listOf(interests[i1]!!)
         )
         articles[a2] = Article(
@@ -53,6 +54,7 @@ class MockDatabase(
             source = "Science Daily",
             publishedAt = now - 7200000,
             summary = "A sample article about science.",
+            imageUrl = "https://picsum.photos/seed/${a2}/800/450",
             interests = listOf(interests[i3]!!)
         )
         articles[a3] = Article(
@@ -61,6 +63,7 @@ class MockDatabase(
             source = "National News",
             publishedAt = now,
             summary = "News from the USA.",
+            imageUrl = "https://picsum.photos/seed/${a3}/800/450",
             interests = listOf(interests[i2]!!, interests[i1]!!)
         )
 

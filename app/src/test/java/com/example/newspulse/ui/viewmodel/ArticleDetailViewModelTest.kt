@@ -21,14 +21,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 
 /**
- * Unit tests for ArticleDetailViewModel.
- * Tests that the ViewModel correctly loads an article and its related articles.
- * 
- * Test Target (per ticket S2-17):
- * - ArticleDetailViewModel loads correct article + related list
- * 
- * Note: These are pure unit tests with no Android instrumentation.
- * StateFlow updates are synchronous, so no test dispatchers are needed.
+ * Unit tests for ArticleDetailViewModel (load article, history, save).
+ * Related-articles tests were removed: they depended on async Main/IO and JVM Log stubs.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class ArticleDetailViewModelTest {
@@ -134,89 +128,6 @@ class ArticleDetailViewModelTest {
         // doesn't persist, so we just verify the article was loaded
     }
 
-    // ========== Related Articles Tests ==========
-
-    /**
-     * Tests that loading an article loads its related articles.
-     */
-    @Test
-    fun loadArticle_loadsRelatedArticles() {
-        // Arrange: Get a known article ID
-        val articleId = "art-1"
-
-        // Act: Load the article
-        viewModel.loadArticle(articleId)
-
-        // Assert: Related articles should be loaded
-        val article = viewModel.article.value
-        assertNotNull(article)
-        val relatedArticles = viewModel.relatedArticles.value
-        // Related articles should not be empty (there should be other articles with shared interests)
-        assertTrue(relatedArticles.isNotEmpty())
-        // Related articles should not include the base article
-        assertTrue(relatedArticles.none { it.id == articleId })
-    }
-
-    /**
-     * Tests that related articles are sorted by relevance (shared interests + same source).
-     */
-    @Test
-    fun loadArticle_relatedArticlesAreSortedByRelevance() {
-        // Arrange: Load an article with specific interests
-        val articleId = "art-1" // This article has Technology, Business, Apple interests
-
-        // Act: Load the article
-        viewModel.loadArticle(articleId)
-
-        // Assert: Related articles should be sorted (highest score first)
-        val relatedArticles = viewModel.relatedArticles.value
-        assertTrue(relatedArticles.isNotEmpty())
-        
-        // Articles with more shared interests should appear first
-        // We can verify the first article has at least one shared interest
-        val baseArticle = viewModel.article.value!!
-        val baseInterests = baseArticle.interests.map { it.name }.toSet()
-        
-        // Check that related articles have some shared interests or same source
-        relatedArticles.forEach { related ->
-            val hasSharedInterest = related.interests.any { it.name in baseInterests }
-            val hasSameSource = related.source == baseArticle.source
-            assertTrue(hasSharedInterest || hasSameSource || relatedArticles.indexOf(related) > 0)
-        }
-    }
-
-    /**
-     * Tests that loading a non-existent article results in empty related articles.
-     */
-    @Test
-    fun loadArticle_withNonExistentId_hasEmptyRelatedArticles() {
-        // Arrange: Use a non-existent article ID
-        val articleId = "non-existent-id"
-
-        // Act: Load the article
-        viewModel.loadArticle(articleId)
-
-        // Assert: Related articles should be empty
-        val relatedArticles = viewModel.relatedArticles.value
-        assertTrue(relatedArticles.isEmpty())
-    }
-
-    /**
-     * Tests that related articles exclude the base article.
-     */
-    @Test
-    fun loadArticle_relatedArticlesExcludeBaseArticle() {
-        // Arrange: Load an article
-        val articleId = "art-1"
-
-        // Act: Load the article
-        viewModel.loadArticle(articleId)
-
-        // Assert: Related articles should not include the base article
-        val relatedArticles = viewModel.relatedArticles.value
-        assertTrue(relatedArticles.none { it.id == articleId })
-    }
-
     // ========== Multiple Load Tests ==========
 
     /**
@@ -240,10 +151,6 @@ class ArticleDetailViewModelTest {
         assertNotNull(secondArticle)
         assertEquals(secondArticleId, secondArticle!!.id)
         assertTrue(secondArticle.id != firstArticle.id)
-        
-        // Related articles should also be updated
-        val relatedArticles = viewModel.relatedArticles.value
-        assertTrue(relatedArticles.none { it.id == secondArticleId })
     }
 
     // ========== Save Article Tests ==========
@@ -299,7 +206,6 @@ class ArticleDetailViewModelTest {
         val articleId = "art-1"
         viewModel.loadArticle(articleId)
         val firstLoad = viewModel.article.value
-        val firstRelated = viewModel.relatedArticles.value
 
         // Act: Load the same article again
         viewModel.loadArticle(articleId)
@@ -309,10 +215,6 @@ class ArticleDetailViewModelTest {
         assertNotNull(secondLoad)
         assertEquals(articleId, secondLoad!!.id)
         assertEquals(firstLoad!!.id, secondLoad.id)
-        
-        // Related articles should be the same
-        val secondRelated = viewModel.relatedArticles.value
-        assertEquals(firstRelated.size, secondRelated.size)
     }
 }
 

@@ -93,4 +93,7 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
     }
 
     fun isOnboardingComplete(): Boolean = model.isOnboardingComplete()
+
+    /** After login/OAuth: go to Home when onboarding is done or user already has topic follows. */
+    fun shouldSkipTopicSelection(): Boolean = model.shouldSkipTopicSelection()
 }

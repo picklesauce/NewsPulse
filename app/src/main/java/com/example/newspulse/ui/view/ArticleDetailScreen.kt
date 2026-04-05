@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -82,6 +83,7 @@ fun ArticleDetailScreen(
             body = article?.summary ?: "",
             imageUrl = article?.imageUrl ?: "",
             readTime = article?.readTime ?: "",
+            topicNames = article?.topics.orEmpty(),
             relatedArticles = relatedArticles,
             onRelatedArticleClick = { id -> navController.navigate("articleDetail/$id") }
         )
@@ -123,7 +125,7 @@ fun ArticleTopBar(
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
                         tint = Color.White
                     )
@@ -175,6 +177,7 @@ fun ColumnScope.ArticleContent(
     body: String,
     imageUrl: String = "",
     readTime: String = "",
+    topicNames: List<String> = emptyList(),
     relatedArticles: List<Article> = emptyList(),
     onRelatedArticleClick: (String) -> Unit = {}
 ) {
@@ -209,6 +212,36 @@ fun ColumnScope.ArticleContent(
                     fontSize = 14.sp,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+            }
+            if (topicNames.isNotEmpty()) {
+                Text(
+                    text = "Topics",
+                    color = Color(0xFF49454F),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    topicNames.distinct().forEach { name ->
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color(0xFFE8DEF8)
+                        ) {
+                            Text(
+                                text = name,
+                                color = Color(0xFF1C1B1F),
+                                fontSize = 13.sp,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
             }
             Text(
                 text = body,

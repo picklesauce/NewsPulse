@@ -13,6 +13,7 @@ import com.example.newspulse.domain.util.RelatedArticlesLlmRanker
 import com.example.newspulse.domain.util.scoreRelatedArticles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -27,7 +28,8 @@ class NewsPulseModel(
 ) {
     private val discoverCache = mutableMapOf<String, Article>()
 
-    fun getFeed(): List<Article> = newsRepository.getArticles()
+    fun getFeed(): List<Article> =
+        newsRepository.getArticles().filter { it.hasDisplayImage }
 
     /** Fetches latest articles, using disk cache when fresh. */
     suspend fun refreshNews() {
@@ -143,6 +145,14 @@ class NewsPulseModel(
     }
 
     fun isOnboardingComplete(): Boolean = interestsRepository.isOnboardingComplete()
+
+    /**
+     * Skip topic-selection when the profile says onboarding is done, or when the user already has
+     * followed interests (covers DB flag drift and returning users after sync).
+     * New signups still open topic selection from [SignUpScreen] when both are false.
+     */
+    fun shouldSkipTopicSelection(): Boolean =
+        isOnboardingComplete() || getFollowedInterestIds().isNotEmpty()
     fun setOnboardingComplete() {
         interestsRepository.setOnboardingComplete()
     }
@@ -239,12 +249,18 @@ class NewsPulseModel(
         userPreferencesRepository.setMemberSinceIfFirstTime()
     }
 
-    fun getReadingHistory(): List<ReadingHistoryItem> = readingHistoryRepository.getReadingHistory()
+    fun getReadingHistory(): List<ReadingHistoryItem> =
+        readingHistoryRepository.getReadingHistory().filter { item ->
+            getArticle(item.articleId)?.hasDisplayImage == true
+        }
     fun addToReadingHistory(articleId: String, title: String) {
         readingHistoryRepository.addToHistory(articleId, title)
     }
 
-    fun getSavedArticles(): Flow<List<Article>> = savedArticlesRepository.getSavedArticles()
+    fun getSavedArticles(): Flow<List<Article>> =
+        savedArticlesRepository.getSavedArticles().map { list ->
+            list.filter { it.hasDisplayImage }
+        }
     fun refreshSavedArticles() { savedArticlesRepository.onUserChanged() }
     fun isArticleSaved(articleId: String): Boolean =
         savedArticlesRepository.getSavedArticlesList().any { it.id == articleId }
@@ -263,7 +279,7 @@ class NewsPulseModel(
                 addAll(savedArticlesRepository.getSavedArticlesList())
                 addAll(discoverCache.values)
             }
-        )
+        ).filter { it.hasDisplayImage }
 
         val heuristicRanked = scoreRelatedArticles(article, candidates)
         val shortlist = heuristicRanked.take(15)
@@ -275,7 +291,9 @@ class NewsPulseModel(
 
     suspend fun searchArticlesByKeyword(keyword: String): List<Article> {
         val raw = ArticleDeduplicator.dedupePreservingOrder(newsRepository.searchByKeyword(keyword))
-        val results = raw.filter { DiscoverCategoryRelevance.matchesDiscoverCategory(keyword, it) }
+        val results = raw
+            .filter { DiscoverCategoryRelevance.matchesDiscoverCategory(keyword, it) }
+            .filter { it.hasDisplayImage }
         results.forEach { discoverCache[it.id] = it }
         return results
     }

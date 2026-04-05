@@ -176,6 +176,7 @@ class NewsApiRepository(
     private fun toArticle(r: ArticleResult, interest: Interest): Article? {
         val title = r.title?.takeIf { it.isNotBlank() } ?: return null
         val uri = r.uri ?: return null
+        val imageUrl = r.image?.takeIf { it.isNotBlank() } ?: return null
         val source = r.source?.title?.takeIf { it.isNotBlank() } ?: "Unknown"
         val url = r.url?.takeIf { it.isNotBlank() } ?: ""
         val summary = r.body?.trim() ?: ""
@@ -188,7 +189,7 @@ class NewsApiRepository(
             url = url,
             publishedAt = publishedAt,
             summary = summary,
-            imageUrl = r.image?.takeIf { it.isNotBlank() } ?: "",
+            imageUrl = imageUrl,
             interests = listOf(interest)
         )
     }
