@@ -46,10 +46,10 @@ We are a group of CS students who are the absolute best at building great projec
 ## 2. Project Information
 
 * [Team Contract](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Contract)
-* [Project Proposal](../../wikis/Project-Proposal)
-* [Meeting Minutes](../../wikis/Team-Meetings) — updated log for the full term
-* [Developer Logs](../../wikis/Developer-Logs) — updated log for the full term 
-* [Team Reflections](../../wikis/Team-Reflections)
+* [Project Proposal](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Project-Proposal)
+* [Meeting Minutes (todo)](../../wikis/Team-Meetings) 
+* [Developer Logs (todo)](../../wikis/Developer-Logs) 
+* [Team Reflections](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Reflections)
 
 ---
 
@@ -57,18 +57,14 @@ We are a group of CS students who are the absolute best at building great projec
 
 ### A brief overview
 
-**Sign-in:** From the login screen, use **Google**, or **email/password**; **Sign Up** opens registration, then you go to **Home**.
-
-**Tabs (bottom navigation):** **Home** — choose interests/categories, scroll the feed, tap an article to read, **Save Offline**, and see **related articles**. **Discover** — trending categories; open one for articles or **follow** it (top right); article view works like Home. **Saved Articles** — offline-saved pieces. **Profile** — edit profile and interests; **reading history**.
-
-More detail, walkthroughs, and edge cases: **[Usage Guide (wiki)](../../wikis/Usage-Guide)**.
+* [Usage Guide](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Usage-Guide)
 
 ---
 
 ## 4. Design Documents
 
-* [UML / ERD (Mermaid)](../../wikis/NewsPulse-UML-Diagram) — diagram source for the data model.
-* [Class diagrams](../../wikis/Class-Diagrams) — high-level app and layer diagrams 
+* [UML / ERD (Mermaid)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/NewsPulse-UML-Diagram)
+* [Class diagrams](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Class-Diagrams)
 
 **Architecture (summary)**
 
