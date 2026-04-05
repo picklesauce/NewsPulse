@@ -6,7 +6,7 @@
 
 ### About the team
 
-We are a group of CS students who are the absolute the best at building great projects. 
+We are a group of CS students who are the absolute best at building great projects. 
 
 ### The team members
 
