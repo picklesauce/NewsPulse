@@ -45,7 +45,7 @@ We are a group of CS students who are the absolute best at building great projec
 
 ## 2. Project Information
 
-* [Team Contract](../../wikis/Team-Contract)
+* [Team Contract](/a44shah/team-101-17/-/wikis/Team-Contract)
 * [Project Proposal](../../wikis/Project-Proposal)
 * [Meeting Minutes](../../wikis/Team-Meetings) — updated log for the full term
 * [Developer Logs](../../wikis/Developer-Logs) — updated log for the full term 
