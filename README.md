@@ -66,12 +66,6 @@ We are a group of CS students who are the absolute best at building great projec
 * [UML / ERD (Mermaid)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/NewsPulse-UML-Diagram)
 * [Class diagrams](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Class-Diagrams)
 
-**Architecture (summary)**
-
-* **ui/** — Views (Compose screens, ViewModels, theme). Renders data and handles user input. Depends only on domain interfaces.
-* **domain/** — Business objects (e.g. Article, LoginState) and interfaces for data access. No Android or Compose dependencies. Defines the contracts that the data layer implements.
-* **data/** — Implementations that fetch or persist data (e.g. SharedPreferences wrappers, API clients). Uses domain interfaces. The `data.mock` package holds mock implementations for testing.
-
 ---
 
 ## 5. Grading Instructions
@@ -84,10 +78,3 @@ We are a group of CS students who are the absolute best at building great projec
 * **Optional:** See [docs/newsapifix.md](docs/newsapifix.md) for NewsAPI-related behavior notes if something behaves unexpectedly with the live API.
 
 ---
-
-## Useful Links
-
-* [Team Contract](../../wikis/Team-Contract)
-* [Project Proposal](../../wikis/Project-Proposal)
-* [Team Meetings](../../wikis/Team-Meetings)
-* [Project repository](../../) _(GitLab project root)_
