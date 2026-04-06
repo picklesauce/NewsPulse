@@ -1,12 +1,14 @@
 # Wiki copy-paste: Version 1.0.0 Release
 
-Use this as the body for a GitLab Wiki page named **Version 1.0.0 Release** (adjust the title if your `versionName` differs). Replace bracketed placeholders before publishing.
+Use this for the GitLab Wiki page **Version 1.0.0 Release**. The links below use this project’s GitLab Release URL; change if your group/path differs.
+
+**Note:** GitLab wiki attachments are limited to ~10 MiB, so the APK is **not** attached to the wiki. Host the APK via **GitLab Release assets** (link) or another download URL, and describe that here.
 
 ---
 
 ## Release date
 
-**[DD-Mon-YYYY]** — date the release APK/installer was produced.
+**06-Apr-2026** — date this installer/APK was produced (adjust if needed).
 
 ## Version
 
@@ -14,39 +16,46 @@ Use this as the body for a GitLab Wiki page named **Version 1.0.0 Release** (adj
 
 ## Summary
 
-Short description of what this release contains for end users.
+NewsPulse is an Android app for personalized news: topics and interests, reading history, saved articles, and article detail views. This release is the course 1.0 deliverable: a known, testable build suitable for installation on an emulator or device.
 
 ## Major changes
 
-- [Change or feature 1]
-- [Change or feature 2]
-- [Change or feature 3]
+- Personalized news feed and interest/topic flows  
+- Reading history and saved articles  
+- Account flows (local and/or Supabase-backed, per project configuration)  
+- Live news and optional LLM-related features when API keys were present at build time  
 
 ## Issues
 
-Link to your GitLab issue list or milestone:
-
-- [Open issues / closed for this release](https://git.uwaterloo.ca/a44shah/team-101-17/-/issues)
+- [Project issues (GitLab)](https://git.uwaterloo.ca/a44shah/team-101-17/-/issues)
 
 ## Installers
 
-Attach the following to this Wiki page (or link to GitLab Release assets):
+GitLab Wiki **cannot** host large APK files (~10 MiB limit). The **Android APK** is provided as a **download link** below.
 
-| Artifact | Description |
-|----------|-------------|
-| **Android APK** | `app-release.apk` (or signed variant) — side-load on emulator or device (API 34+). |
+| Artifact | What it is |
+|----------|------------|
+| **Android APK** | Release build for side-loading. **Minimum API 34** — use an emulator or device that meets this. |
 
-### For graders / course staff
+### Download the APK
 
-- **Fast path:** Install the attached APK; the app should run without a local build.
-- **Full API features:** If the APK was built with keys in CI or locally, live news and Supabase features should work as tested. If you need to **build from source** with the same configuration the team used, copy the contents of **`local.properties`** from the private section your team provides (Wiki-only or secure channel), or use **`local.properties.example`** plus keys supplied by the team.
+- **Primary:** Open the **[GitLab Release v1.0.0](https://git.uwaterloo.ca/a44shah/team-101-17/-/releases/v1.0.0)** page and use the **Release assets** link (e.g. Google Drive or other host) to download the `.apk` file.  
+- The release APK was built with the team’s API configuration so it runs **without** a local `local.properties` on the install target.
 
-Do **not** paste long-lived service-role secrets in public wikis; use **anon** keys and read-only API keys only, per your instructor’s policy.
+### Install the APK (quick)
 
-## Release in GitLab
+- **Emulator:** Create an **Android Virtual Device (API 34+)** in Android Studio. Drag the `.apk` onto the running emulator, or run `adb install path-to-your.apk`.  
+- **Device:** Enable **Developer options** and **USB debugging**, connect via USB, then `adb install …`, or copy the file and open it (allow install from that source if prompted).
 
-Create the release under **Deploy → Release** so the repository is tagged and archived as required by the course.
+### Installer images (optional)
 
----
+If required, add **screenshots** of install/run using the wiki **image** upload (small files only) or embed images from the repository.
 
-After publishing, add a **Releases** link in `README.md` pointing to this Wiki page.
+## For graders / course staff
+
+- **Recommended:** Download the APK from the **[GitLab Release v1.0.0](https://git.uwaterloo.ca/a44shah/team-101-17/-/releases/v1.0.0)** assets — **no clone or build** required.  
+- **Build from source:** Clone the repo, copy `local.properties.example` to `local.properties`, set `sdk.dir` and any keys your team provides. See `docs/getting-started.md` in the repository. Without a news API key, the app can still run with **mock** article data for UI grading.
+
+## GitLab Release (tag + source archive)
+
+This version is tagged as **`v1.0.0`**. The **[GitLab Release v1.0.0](https://git.uwaterloo.ca/a44shah/team-101-17/-/releases/v1.0.0)** page provides **source code downloads** (zip/tar) for this tag, per course instructions.
