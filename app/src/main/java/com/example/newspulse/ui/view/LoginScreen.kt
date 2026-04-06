@@ -55,7 +55,7 @@ import com.example.newspulse.ui.preview.createPreviewViewModelFactory
 import com.example.newspulse.ui.theme.NewsPulseTheme
 import com.example.newspulse.ui.viewmodel.LoginViewModel
 
-/** Matches ArticleListScreen / Home palette for a consistent auth experience. */
+// Matches ArticleListScreen
 internal object NewsPulseAuthColors {
     val screenBg = Color(0xFFF8F8FC)
     val primaryText = Color(0xFF1C1B1F)

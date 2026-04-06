@@ -31,7 +31,7 @@ class SignUpViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun togglePasswordVisible() = _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
     fun toggleConfirmPasswordVisible() = _uiState.update { it.copy(confirmPasswordVisible = !it.confirmPasswordVisible) }
 
-    /** Validates locally, then creates account off the UI thread; [onResult] on main thread. */
+    // Basic sign up validation
     fun signUp(onResult: (Boolean) -> Unit) {
         val s = _uiState.value
         when {

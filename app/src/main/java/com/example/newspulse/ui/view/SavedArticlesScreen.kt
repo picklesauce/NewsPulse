@@ -114,8 +114,17 @@ fun SavedArticlesScreen(
                                     color = Color.Black,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(bottom = 6.dp)
+                                    modifier = Modifier.padding(bottom = if (article.topics.isEmpty()) 6.dp else 4.dp)
                                 )
+                                if (article.topics.isNotEmpty()) {
+                                    Text(
+                                        text = article.topics.distinct().joinToString(" · "),
+                                        color = Color(0xFF6750A4),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(bottom = 6.dp)
+                                    )
+                                }
                                 Row {
                                     Text(
                                         text = article.source,

@@ -61,12 +61,7 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
         }
     }
 
-    /**
-     * Persists topic picks for Supabase without bulk delete/replace (OAuth JWT users often lack
-     * DELETE on followed_interests). Follows each interest individually, then marks onboarding done.
-     * Uses best-effort approach: even if individual DB writes fail, we still complete onboarding
-     * so the user isn't stuck in a loop.
-     */
+    // Saves selected interests to Supabase
     suspend fun saveAndContinueNow(): Boolean = withContext(Dispatchers.IO) {
         val selected = _selectedTopics.value
         if (selected.isEmpty()) return@withContext false
@@ -75,7 +70,6 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
             catalog.find { it.name.equals(name, ignoreCase = true) }
         }
         if (interests.isEmpty()) return@withContext false
-        // Follow all interests best-effort; don't abort if one DB write fails.
         for (interest in interests) {
             model.followInterestSuspend(interest.id)
         }

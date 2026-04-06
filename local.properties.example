@@ -1,17 +1,7 @@
-# Get a key at https://newsapi.ai/
-NEWSAPI_AI_KEY=
-
-
-LLM_API_KEY=
-LLM_API_URL=
-LLM_MODEL=gpt-4o-mini
-
-# Gemini API key used for related-article reranking.
-# If set, reranking is only enabled when RELATED_ARTICLES_LLM_ENABLED=true.
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
-
-# Gate to keep unit tests deterministic (default: false).
-RELATED_ARTICLES_LLM_ENABLED=false
-SUPABASE_URL=---
-SUPABASE_ANON_KEY=---
+GEMINI_API_KEY=...
+GEMINI_MODEL=...
+NEWSAPI_AI_KEY=...
+RELATED_ARTICLES_LLM_ENABLED=...
+SUPABASE_ANON_KEY=...
+SUPABASE_URL=...
+sdk.dir=C\:\\Users\\aadit\\AppData\\Local\\Android\\Sdk

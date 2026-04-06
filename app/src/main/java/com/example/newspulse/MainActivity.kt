@@ -98,8 +98,6 @@ class MainActivity : ComponentActivity() {
                 supabaseUrl = BuildConfig.SUPABASE_URL,
                 supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY
             ) ?: error("Supabase SDK init failed")
-            // Prefer JWT from the Auth SDK (always fresh after refresh / OAuth); fall back to cached session.
-            // Using only prefs missed refreshes and caused anon-key REST calls → RLS blocked writes/reads for Google.
             val resolveAccessToken: () -> String? = {
                 val t = supabaseSdk.auth.currentSessionOrNull()?.accessToken
                 if (!t.isNullOrBlank()) t else userSession.accessToken
@@ -163,7 +161,6 @@ class MainActivity : ComponentActivity() {
                         if (!useSupabase) return@LaunchedEffect
                         withContext(Dispatchers.IO) {
                             runCatching {
-                                // Restores session + loads interests/onboarding + profile from DB for current user
                                 model.syncSupabaseAuthSessionToApp()
                                 (interestsCatalogRepository as SupabaseInterestsCatalogRepository)
                                     .preloadCatalogIfEmpty()

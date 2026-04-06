@@ -15,7 +15,7 @@ import org.junit.Test
  */
 class ArticleTest {
 
-    // ========== Article.isValid() Tests ==========
+    // Valid article tests
 
     /**
      * Tests that an article is valid when both id and title are non-blank.
@@ -93,7 +93,7 @@ class ArticleTest {
         assertEquals("A brief summary", article.snippet)
     }
 
-    // ========== Article.matches() Tests ==========
+    // Article match tests
     // These tests verify search query matching logic (ticket S2-15 requirement)
 
     /**
@@ -211,7 +211,7 @@ class ArticleTest {
         assertFalse(article.matches("he"))
     }
 
-    // ========== Interest Filtering Tests (matchesInterests()) ==========
+    // Interest filter tests
     // These tests verify interest filtering logic (ticket S2-15 requirement)
 
     /**

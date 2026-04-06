@@ -38,10 +38,7 @@ class DiscoverViewModel(private val model: NewsPulseModel) : ViewModel() {
         _uiState.update { it.copy(interestsByType = grouped) }
     }
 
-    /**
-     * Opens a Discover category using the same interest ids as the catalog / Supabase
-     * (not synthetic `discover-*` ids), so follow state and saves stay consistent.
-     */
+// Opens a Discover category using the same interest ids as Supabase
     fun onSelectCategory(name: String, type: InterestType) {
         viewModelScope.launch {
             val interest = model.interestForDiscoverCategory(name, type)
