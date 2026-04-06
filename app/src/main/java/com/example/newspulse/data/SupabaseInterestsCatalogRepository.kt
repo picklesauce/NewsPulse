@@ -20,7 +20,6 @@ class SupabaseInterestsCatalogRepository(
 
     override fun getAllInterests(): List<Interest> = synchronized(cacheLock) { cache.toList() }
 
-    /** Fetches interests from Supabase if cache is empty; safe to call from IO during bootstrap. */
     suspend fun preloadCatalogIfEmpty() {
         synchronized(cacheLock) {
             if (cache.isNotEmpty()) return

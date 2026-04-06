@@ -25,10 +25,6 @@ class SupabaseUserPreferencesRepository(
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /**
-     * Mirrors [KEY_USERNAME] synchronously — SharedPreferences.apply() can lag, so Profile read
-     * right after bootstrap still saw "" and showed "—".
-     */
     @Volatile
     private var usernameMemory: String? = null
 
@@ -44,7 +40,6 @@ class SupabaseUserPreferencesRepository(
             .commit()
     }
 
-    /** Ensures remote profile row exists and caches username / member_since into prefs. */
     suspend fun bootstrapProfile() {
         val userId = userIdProvider() ?: return
         val rows = client.select(
@@ -102,7 +97,7 @@ class SupabaseUserPreferencesRepository(
         }
     }
 
-    /** Local part of Supabase Auth email when OAuth session exists (e.g. Google). */
+    // supabase auth email for when oauth exist
     private fun fallbackDisplayNameFromAuthEmail(): String? {
         val email = SupabaseSdkHolder.client?.auth?.currentSessionOrNull()?.user?.email
             ?: return null

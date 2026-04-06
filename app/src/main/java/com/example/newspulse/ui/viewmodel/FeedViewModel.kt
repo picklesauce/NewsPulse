@@ -8,6 +8,7 @@ import com.example.newspulse.domain.model.Article
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -45,11 +46,21 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
     init {
-        // Load from cache first, then fetch from API
         refreshArticles()
         viewModelScope.launch {
             model.refreshNews()
             refreshArticles()
+        }
+        viewModelScope.launch {
+            model.feedRefetchRequests.collectLatest {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                try {
+                    model.forceRefreshNews()
+                } finally {
+                    refreshArticles()
+                    _uiState.update { st -> st.copy(isLoading = false) }
+                }
+            }
         }
     }
 
@@ -113,7 +124,10 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
     }
 
     fun onResumeRefresh() {
-        refreshArticles()
+        viewModelScope.launch {
+            model.refreshNews()
+            refreshArticles()
+        }
     }
 
     private fun refreshArticles() {

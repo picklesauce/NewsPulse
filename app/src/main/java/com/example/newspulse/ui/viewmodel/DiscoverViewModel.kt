@@ -21,7 +21,6 @@ data class DiscoverUiState(
     val articlesForSelected: List<Article> = emptyList(),
     val isLoading: Boolean = false,
     val isFollowed: Boolean = false,
-    /** True while follow/unfollow is in flight. */
     val isFollowBusy: Boolean = false,
     val followError: String? = null
 )

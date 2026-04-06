@@ -7,7 +7,7 @@ import com.example.newspulse.domain.util.InterestSlug
 interface InterestsCatalogRepository {
     fun getAllInterests(): List<Interest>
 
-    /** Adds a user-created interest to the catalog. Returns the created [Interest]. */
+    // create user created inputted interest, and resturn
     fun addCustomInterest(name: String, type: InterestType): Interest {
         return Interest(
             id = InterestSlug.stableIdForName(name),
@@ -16,7 +16,7 @@ interface InterestsCatalogRepository {
         )
     }
 
-    /** Ensures the interest exists in the backing store before following (e.g. Supabase FK). */
+    // persist user created interest, ensure it exists
     suspend fun addCustomInterestPersisted(name: String, type: InterestType): Interest =
         addCustomInterest(name, type)
 }

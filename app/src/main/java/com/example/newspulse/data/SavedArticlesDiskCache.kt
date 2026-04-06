@@ -5,11 +5,9 @@ import com.example.newspulse.domain.model.Article
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-/**
- * Persists full article data for saved articles to SharedPreferences.
- * Keyed by article ID so content survives app restarts and logout/login cycles.
- * This is the single reliable source of truth for saved article content.
- */
+
+
+// fill article data for saved articles moved to saved preferences
 class SavedArticlesDiskCache(context: Context) {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

@@ -3,23 +3,20 @@ package com.example.newspulse.domain.util
 import com.example.newspulse.domain.model.Article
 import java.util.Locale
 
-/**
- * Post-filters Event Registry keyword results for Discover categories.
- * The API often returns loosely related items; we keep articles whose title or summary
- * clearly relates to the selected topic using phrases and curated terms.
- */
+
+// post filters, event refistry keyword results for discover categories
 object DiscoverCategoryRelevance {
 
     private val GENERIC = setOf("news", "latest", "today", "update", "updates", "report", "reports", "breaking")
 
-    /** Film / celebrity context — Science must not match only via "science fiction" or movie casting. */
+    // film/celebrity context
     private val ENTERTAINMENT_FILM_PATTERN = Regex(
         "\\b(film|films|movie|movies|starring|actor|actress|hollywood|oscar|premiere|sequel|prequel|" +
             "screenplay|box office|gosling|celebrity|celebrities|casting|blockbuster)\\b",
         RegexOption.IGNORE_CASE
     )
 
-    /** Clear STEM / research signals (not movie sci-fi). */
+    // stemresearch, not scifi
     private val STRONG_SCIENCE_PATTERN = Regex(
         "\\b(peer-reviewed|peer reviewed|scientific study|clinical trial|randomized trial|double-blind|" +
             "physics|chemistry|biology|neuroscience|astronomy|geology|genetics|genome|molecule|particle|" +
@@ -45,10 +42,6 @@ object DiscoverCategoryRelevance {
         "scientists have", "research team", "fossil", "species", "ecosystem", "vaccine trial"
     )
 
-    /**
-     * Terms and phrases (lowercase) — a match on any is enough after the full category
-     * name is checked, except ultra-short tokens use word boundaries.
-     */
     private val TERMS: Map<String, List<String>> = mapOf(
         "Technology" to listOf(
             "technology", "tech", "software", "hardware", "digital", "computing", "semiconductor",
@@ -134,9 +127,7 @@ object DiscoverCategoryRelevance {
         return terms.any { termMatches(text, it) }
     }
 
-    /**
-     * Blocks entertainment/film hits that only share "science" via sci-fi genre or loose API matches.
-     */
+    // Blocks entertainment/film hits that only share "science" in sci-fi / film contexts.
     private fun matchesScienceCategory(text: String): Boolean {
         if (STRONG_SCIENCE_PATTERN.containsMatchIn(text)) return true
         if (SCIENCE_SUPPORT_TERMS.any { termMatches(text, it) }) return true

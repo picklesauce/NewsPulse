@@ -13,12 +13,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.min
 
-/**
- * Minimal LLM-based re-ranking:
- * - Input is the heuristic top-N shortlist (N=15 in the caller).
- * - The LLM chooses an ordered top-3 from the shortlist.
- * - If LLM config is missing or parsing fails, falls back to heuristic top-3.
- */
+//Minimal LLM-based re-ranking:
+//Input is the heuristic top-N shortlist (N=15 in the caller).
+//the LLM chooses an ordered top-3 from the shortlist.
+//If LLM config is missing or parsing fails, falls back to heuristic top-3.
+
 object RelatedArticlesLlmRanker {
     private const val TAG = "RelatedArticlesLlm"
     private const val SHORTLIST_SIZE = 10
@@ -297,9 +296,7 @@ object RelatedArticlesLlmRanker {
         return sb.toString()
     }
 
-    /**
-     * @return up to 3 unique indices, 0-based into [shortlist].
-     */
+    // 3unique shortlist
     private fun extractTop3Indices0Based(responseText: String, shortlistSize: Int): List<Int> {
         if (responseText.isBlank()) return emptyList()
 
@@ -353,11 +350,7 @@ object RelatedArticlesLlmRanker {
         return out
     }
 
-    /**
-     * Handles common LLM wrappers like:
-     * - "Here is the JSON requested:"
-     * - fenced markdown blocks with/without json language tag.
-     */
+    // llm wrapper handling, like json provided and fetched messages
     private fun cleanModelResponse(raw: String): String {
         var text = raw.trim()
         if (text.startsWith("```")) {

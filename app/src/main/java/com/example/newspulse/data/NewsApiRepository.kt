@@ -14,17 +14,8 @@ import java.net.UnknownHostException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-/**
- * Fetches articles from Event Registry / NewsAPI.ai with a two-layer cache:
- *
- * 1. **Disk cache** ([ArticleDiskCache]) -- per-interest, survives app restarts,
- *    checked first so the feed loads instantly on cold start.
- * 2. **In-memory cache** -- the merged/sorted list served by [getArticles].
- *
- * On [refresh], each interest is skipped if its disk cache is still fresh (TTL-based).
- * Empty results are "negative-cached" with a longer TTL to avoid wasting API calls.
- * On explicit pull-to-refresh, pass [forceNetwork] = true to bypass TTL.
- */
+
+// articles fetched form registry or newsapi, if refresh, interest is skipped if cashe is still fresh
 class NewsApiRepository(
     private val apiKey: String,
     private val api: EventRegistryApi,
@@ -38,11 +29,6 @@ class NewsApiRepository(
 
     override fun getArticles(): List<Article> = synchronized(cacheLock) { memoryCache.toList() }
 
-    /**
-     * Loads articles for every followed interest.
-     * Serves from disk cache when fresh; fetches from API otherwise.
-     * [forceNetwork] bypasses TTL (used for explicit pull-to-refresh).
-     */
     override suspend fun refresh() { doRefresh(forceNetwork = false) }
 
     override suspend fun forceRefresh() { doRefresh(forceNetwork = true) }
@@ -116,10 +102,7 @@ class NewsApiRepository(
         return emptyList()
     }
 
-    /**
-     * Returns articles for a single interest, using disk cache when available
-     * and fresh, or fetching from the API and writing back to cache.
-     */
+    // articles from single interest, cache, or fetch api
     private suspend fun loadForInterest(
         interest: Interest,
         dateStart: String,
@@ -161,11 +144,7 @@ class NewsApiRepository(
         catch (_: Exception) { emptyList() }
     }
 
-    /**
-     * Converts an [Interest] into an effective Event Registry keyword.
-     * Country names alone return geographic/travel content, so we append "news".
-     * Person, Company, and Topic names work well as-is for keyword search.
-     */
+
     private fun buildKeyword(interest: Interest): String = when (interest.type) {
         InterestType.Country -> "${interest.name} news"
         InterestType.Person  -> interest.name

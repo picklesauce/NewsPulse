@@ -10,10 +10,8 @@ interface InterestsRepository {
     fun setOnboardingComplete()
     fun onUserChanged() {}
 
-    /** True when writes go to Supabase and require [AuthRepository.getCurrentUserId]. */
     fun needsAuthenticatedUserForWrite(): Boolean = false
 
-    /** Await remote persistence (Supabase); default uses sync methods. */
     suspend fun followInterestSuspend(id: String): Boolean {
         followInterest(id)
         return true

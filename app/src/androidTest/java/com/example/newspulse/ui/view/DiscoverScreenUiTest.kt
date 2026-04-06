@@ -26,10 +26,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Compose UI tests for Discover ([ExploreScreen]): browse grid, search, category drill-in, back.
- * Uses in-memory repos (no network / Supabase).
- */
+
+
+// discover screen UI tests, grid, search, catagory, etc
+// shouldnt need data db
 @RunWith(AndroidJUnit4::class)
 class DiscoverScreenUiTest {
 
@@ -60,7 +60,6 @@ class DiscoverScreenUiTest {
         }
     }
 
-    /** Polls until [assertion] passes or throws the last [AssertionError]. */
     private fun ComposeContentTestRule.waitUntilAssert(timeoutMillis: Long, assertion: () -> Unit) {
         val deadline = System.currentTimeMillis() + timeoutMillis
         var last: AssertionError? = null

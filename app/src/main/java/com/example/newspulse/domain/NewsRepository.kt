@@ -5,12 +5,12 @@ import com.example.newspulse.domain.model.Article
 interface NewsRepository {
     fun getArticles(): List<Article>
 
-    /** Fetches latest articles, using cache when available (no-op for mocks). */
+    // fetch latest article
     suspend fun refresh() {}
 
-    /** Fetches latest articles, bypassing any cache TTL (no-op for mocks). */
+    //Fetches latest articles, bypassing any cache
     suspend fun forceRefresh() { refresh() }
 
-    /** Searches for articles matching [keyword], independent of followed interests. */
+    //Searches for articles matching [keyword], regardless of followed interests
     suspend fun searchByKeyword(keyword: String): List<Article> = emptyList()
 }

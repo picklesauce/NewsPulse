@@ -11,7 +11,11 @@ import com.example.newspulse.domain.util.DiscoverCategoryRelevance
 import com.example.newspulse.domain.util.InterestSlug
 import com.example.newspulse.domain.util.RelatedArticlesLlmRanker
 import com.example.newspulse.domain.util.scoreRelatedArticles
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.Dispatchers
@@ -28,24 +32,30 @@ class NewsPulseModel(
 ) {
     private val discoverCache = mutableMapOf<String, Article>()
 
+    private val _feedRefetchRequests = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val feedRefetchRequests: SharedFlow<Unit> = _feedRefetchRequests.asSharedFlow()
+
+    fun markFeedShouldRefetch() {
+        _feedRefetchRequests.tryEmit(Unit)
+    }
+
     fun getFeed(): List<Article> =
         newsRepository.getArticles().filter { it.hasDisplayImage }
 
-    /** Fetches latest articles, using disk cache when fresh. */
+    // fetch new articles, if fresh, use whats there on cache
     suspend fun refreshNews() {
         newsRepository.refresh()
     }
 
-    /** Fetches latest articles, bypassing cache TTL (for pull-to-refresh). */
+    // fetches latest articles
     suspend fun forceRefreshNews() {
         newsRepository.forceRefresh()
     }
 
-    /**
-     * Returns a single article by its stable [articleId].
-     * Checks the live feed first, then falls back to saved articles so that
-     * previously-saved articles remain accessible even after interest changes.
-     */
+    // return article by id
     fun getArticle(articleId: String): Article? =
         newsRepository.getArticles().find { it.id == articleId }
             ?: savedArticlesRepository.getSavedArticlesList().find { it.id == articleId }
@@ -54,10 +64,7 @@ class NewsPulseModel(
     fun getAllInterests(): List<Interest> =
         interestsCatalogRepository.getAllInterests()
 
-    /**
-     * Interest for a Discover grid category: uses the same id as [addCustomInterestPersisted]
-     * will create (catalog UUID/slug match), so follow state and Supabase rows stay aligned.
-     */
+
     fun interestForDiscoverCategory(name: String, type: InterestType): Interest {
         val existing = getAllInterests().find { it.name.equals(name, ignoreCase = true) }
         if (existing != null) return existing
@@ -68,19 +75,21 @@ class NewsPulseModel(
         )
     }
 
-    /** Creates a custom interest, adds it to the catalog, and auto-follows it. */
+    // create custom interest, add and follow
     fun addCustomInterest(name: String, type: InterestType): Interest {
         val interest = interestsCatalogRepository.addCustomInterest(name, type)
-        interestsRepository.followInterest(interest.id)
+        followInterest(interest.id)
         return interest
     }
 
     fun followInterest(id: String) {
         interestsRepository.followInterest(id)
+        markFeedShouldRefetch()
     }
 
     fun unfollowInterest(id: String) {
         interestsRepository.unfollowInterest(id)
+        markFeedShouldRefetch()
     }
 
     fun getFollowedInterestIds(): Set<String> = interestsRepository.getFollowedInterestIds()
@@ -99,31 +108,44 @@ class NewsPulseModel(
 
     fun setFollowedInterestIds(ids: Set<String>) {
         interestsRepository.setFollowedInterestIds(ids)
+        markFeedShouldRefetch()
     }
 
-    suspend fun followInterestSuspend(id: String): Boolean =
-        interestsRepository.followInterestSuspend(id)
+    suspend fun followInterestSuspend(id: String): Boolean {
+        val ok = interestsRepository.followInterestSuspend(id)
+        if (ok) markFeedShouldRefetch()
+        return ok
+    }
 
-    suspend fun unfollowInterestSuspend(id: String): Boolean =
-        interestsRepository.unfollowInterestSuspend(id)
+    suspend fun unfollowInterestSuspend(id: String): Boolean {
+        val ok = interestsRepository.unfollowInterestSuspend(id)
+        if (ok) markFeedShouldRefetch()
+        return ok
+    }
 
-    suspend fun setFollowedInterestIdsSuspend(ids: Set<String>): Boolean =
-        interestsRepository.setFollowedInterestIdsSuspend(ids)
+    suspend fun setFollowedInterestIdsSuspend(ids: Set<String>): Boolean {
+        val ok = interestsRepository.setFollowedInterestIdsSuspend(ids)
+        if (ok) markFeedShouldRefetch()
+        return ok
+    }
 
-    suspend fun setOnboardingCompleteSuspend(): Boolean =
-        interestsRepository.setOnboardingCompleteSuspend()
+    suspend fun setOnboardingCompleteSuspend(): Boolean {
+        val ok = interestsRepository.setOnboardingCompleteSuspend()
+        if (ok) markFeedShouldRefetch()
+        return ok
+    }
 
-    /** Persist new catalog row (when needed) then follow; used for Interests / topic flows. */
+    // new catalog persistence
     suspend fun addCustomInterestPersisted(name: String, type: InterestType): Boolean {
         val interest = interestsCatalogRepository.addCustomInterestPersisted(name, type)
         val followed = followInterestSuspend(interest.id)
         if (!followed) {
-            interestsRepository.followInterest(interest.id)
+            followInterest(interest.id)
         }
         return true
     }
 
-    /** Discover: ensure catalog + follow row exist in order (avoids Supabase FK / race issues). */
+    // Discover: ensure catalog + follow row exist in order (avoids Supabase FK / race issues).
     suspend fun followDiscoverInterest(interest: Interest): Boolean {
         if (interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null) {
             return false
@@ -134,7 +156,7 @@ class NewsPulseModel(
         }
     }
 
-    /** Discover: remove follow row in Postgres / local store. */
+    // remove row postgres for discover
     suspend fun unfollowDiscoverInterest(interest: Interest): Boolean {
         if (interestsRepository.needsAuthenticatedUserForWrite() && getCloudUserId() == null) {
             return false
@@ -146,11 +168,8 @@ class NewsPulseModel(
 
     fun isOnboardingComplete(): Boolean = interestsRepository.isOnboardingComplete()
 
-    /**
-     * Skip topic-selection when the profile says onboarding is done, or when the user already has
-     * followed interests (covers DB flag drift and returning users after sync).
-     * New signups still open topic selection from [SignUpScreen] when both are false.
-     */
+    //Skip topic-selection when the profile says onboarding is done, or when the user already has
+    //followed interests
     fun shouldSkipTopicSelection(): Boolean =
         isOnboardingComplete() || getFollowedInterestIds().isNotEmpty()
     fun setOnboardingComplete() {
@@ -164,7 +183,7 @@ class NewsPulseModel(
         userPreferencesRepository.setUsername(username)
     }
 
-    /** Re-load user profile fields from Supabase (used by Profile screen after OAuth). */
+    //Re-load user profile fields from Supabase 
     suspend fun refreshProfileDisplayFromRemote() {
         userPreferencesRepository.refreshProfileFromRemote()
     }
@@ -191,6 +210,7 @@ class NewsPulseModel(
             (interestsRepository as? SupabaseInterestsRepository)?.awaitInitialSync()
             userPreferencesRepository.refreshProfileFromRemote()
         }
+        markFeedShouldRefetch()
     }
 
     suspend fun logIn(email: String, password: String): AuthResult {

@@ -2,12 +2,9 @@ package com.example.newspulse.domain.util
 
 import com.example.newspulse.domain.model.Article
 
-/**
- * Assembles a final feed from per-interest article buckets by:
- * 1. Balancing representation across interests (round-robin)
- * 2. Scoring each article on freshness + image presence
- * 3. Penalizing consecutive same-source articles for diversity
- */
+
+// final feed generation from per interest buckets
+// 1. balanced representation from interests, 2. score based on image and new, 3. penalize same source, encourage diversity
 object FeedRanker {
 
     private const val MAX_ARTICLES_PER_INTEREST = 10
@@ -16,22 +13,13 @@ object FeedRanker {
     private const val IMAGE_BONUS = 5.0
     private const val SAME_SOURCE_PENALTY = 15.0
 
-    /**
-     * Merges per-interest article lists into a single ranked feed.
-     *
-     * @param buckets map of interest-name → articles for that interest
-     * @return a de-duplicated, scored, diversity-adjusted list
-     */
+    //per interest into single
     fun rank(buckets: Map<String, List<Article>>): List<Article> {
         val balanced = balancedMerge(buckets)
         val scored = balanced.map { it to score(it) }.sortedByDescending { it.second }
         return diversify(scored.map { it.first })
     }
 
-    /**
-     * Round-robin across interest buckets so that each interest gets
-     * fair representation even when one interest returns many more results.
-     */
     internal fun balancedMerge(buckets: Map<String, List<Article>>): List<Article> {
         if (buckets.isEmpty()) return emptyList()
 
@@ -57,11 +45,7 @@ object FeedRanker {
         return result
     }
 
-    /**
-     * Scores a single article. Higher = better placement.
-     * - Freshness: exponential decay from [FRESHNESS_MAX_POINTS] with [FRESHNESS_HALF_LIFE_MS]
-     * - Image bonus: small bump for articles with a thumbnail
-     */
+    // score single articles
     internal fun score(article: Article): Double {
         val ageMs = (System.currentTimeMillis() - article.publishedAt)
             .coerceAtLeast(0)
@@ -71,10 +55,7 @@ object FeedRanker {
         return freshness + image
     }
 
-    /**
-     * Pushes consecutive articles from the same source apart.
-     * When a repeat source is detected, it is deferred and re-inserted later.
-     */
+    // consecutive articels from same source pushed
     internal fun diversify(articles: List<Article>): List<Article> {
         if (articles.size <= 1) return articles
         val result = mutableListOf<Article>()
