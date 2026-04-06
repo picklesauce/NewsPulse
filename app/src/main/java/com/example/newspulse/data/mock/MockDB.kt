@@ -28,7 +28,6 @@ object MockDB {
         interests.find { it.name == name }
             ?: error("Interest not found: $name. Available: ${interests.map { it.name }}")
 
-    /** Stable placeholder so [Article.hasDisplayImage] is true for mock data (matches feed filter). */
     private fun mockImage(articleId: String): String =
         "https://picsum.photos/seed/${articleId}/800/450"
 

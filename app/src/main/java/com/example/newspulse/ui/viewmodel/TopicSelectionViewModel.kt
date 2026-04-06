@@ -40,10 +40,6 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     fun getFilteredTopics(): List<String> = allTopics.filterMatchingQuery(_searchQuery.value)
 
-    /**
-     * Returns true if the current search query doesn't match any existing interest,
-     * meaning the user can add it as a custom interest.
-     */
     fun canAddCustom(): Boolean {
         val q = _searchQuery.value.trim()
         if (q.length < 2) return false
@@ -61,7 +57,6 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
         }
     }
 
-    // Saves selected interests to Supabase
     suspend fun saveAndContinueNow(): Boolean = withContext(Dispatchers.IO) {
         val selected = _selectedTopics.value
         if (selected.isEmpty()) return@withContext false
@@ -73,7 +68,11 @@ class TopicSelectionViewModel(private val model: NewsPulseModel) : ViewModel() {
         for (interest in interests) {
             model.followInterestSuspend(interest.id)
         }
-        model.setOnboardingCompleteSuspend()
+        val ok = model.setOnboardingCompleteSuspend()
+        if (ok) {
+            model.forceRefreshNews()
+        }
+        ok
     }
 
     fun saveAndContinue(onSuccess: () -> Unit) {

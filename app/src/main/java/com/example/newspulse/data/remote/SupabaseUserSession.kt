@@ -8,12 +8,6 @@ import java.util.Locale
 class SupabaseUserSession(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    /**
-     * In-memory copies so REST calls see the JWT immediately after OAuth.
-     * [SharedPreferences.apply] persists asynchronously; without this, the next
-     * [accessToken] read can still be null and PostgREST falls back to the anon key,
-     * which fails RLS for user-scoped rows (empty profile/interests, username stuck empty).
-     */
     @Volatile
     private var accessTokenCache: String? = null
 

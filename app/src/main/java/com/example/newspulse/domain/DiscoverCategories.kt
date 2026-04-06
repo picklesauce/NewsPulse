@@ -1,9 +1,6 @@
 package com.example.newspulse.domain
 
-/**
- * Names of the fixed Discover grid on ExploreScreen. Used to split followed topics into
- * "categories" (these) vs user-specific interests in the Home feed UI. DB storage is unchanged.
- */
+// discover categories (act as interests)
 object DiscoverCategories {
     val NAMES: Set<String> = setOf(
         "Technology",

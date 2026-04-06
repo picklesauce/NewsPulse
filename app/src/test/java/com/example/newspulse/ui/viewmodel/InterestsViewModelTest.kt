@@ -67,9 +67,7 @@ class InterestsViewModelTest {
         }
     }
 
-    /**
-     * Tests that initial state has correct default values.
-     */
+    // initial state default vals
     @Test
     fun initialState_hasCorrectDefaults() {
         val state = viewModel.uiState.value
@@ -109,9 +107,7 @@ class InterestsViewModelTest {
 
     // Follow interest tests
 
-    /**
-     * Tests that following an interest updates the state correctly.
-     */
+    // test follow interest follows correctly
     @Test
     fun onFollowToggle_followingInterest_updatesState() {
         // Arrange: Get an interest ID

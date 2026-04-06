@@ -7,10 +7,8 @@ import com.example.newspulse.domain.model.UserProfile
 import java.time.Instant
 import java.util.UUID
 
-/**
- * In-memory implementation of [DatabaseInterface] for unit testing.
- * Uses mutable lists and maps; no SQL or external database.
- */
+
+// no external db is used, in memory impl of a db interface
 class MockDatabase(
     private val defaultUserId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
 ) : DatabaseInterface {

@@ -2,9 +2,7 @@ package com.example.newspulse.data.mock
 
 import com.example.newspulse.domain.InterestsRepository
 
-/**
- * Fake implementation for previews. Pre-seeded with interests from MockDB.
- */
+// mockdb fake impl
 class FakeInterestsRepository : InterestsRepository {
     private var complete = false
     private val followedIds = MockDB.interests

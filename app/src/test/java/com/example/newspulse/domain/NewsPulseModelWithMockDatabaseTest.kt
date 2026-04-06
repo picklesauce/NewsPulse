@@ -18,10 +18,7 @@ import org.junit.Before
 import org.junit.Test
 import java.util.UUID
 
-/**
- * Unit tests for [NewsPulseModel] using [MockDatabase] as the backing store.
- * Uses repository adapters that delegate to [DatabaseInterface] via runBlocking.
- */
+// newspulse model using mockdb unit tests
 class NewsPulseModelWithMockDatabaseTest {
 
     private val defaultUserId = UUID.fromString("00000000-0000-0000-0000-000000000001")

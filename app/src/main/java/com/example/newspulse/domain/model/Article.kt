@@ -32,8 +32,8 @@ data class Article(
     val snippet: String get() = summary
     val topics: List<String> get() = interests.map { it.name }
 
-    /** Non-blank image URL — articles without this are excluded from feeds and recommendations. */
+    // articles w no images discluded
     val hasDisplayImage: Boolean get() = imageUrl.isNotBlank()
-    /** Estimated read time from title + summary (used on article cards). */
+    // estimated reacding time
     val readTime: String get() = estimateReadTime("$title $summary")
 }

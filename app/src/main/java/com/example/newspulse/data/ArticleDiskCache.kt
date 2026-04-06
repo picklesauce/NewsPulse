@@ -7,11 +7,8 @@ import com.example.newspulse.domain.model.InterestType
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
-/**
- * Persists fetched articles per-interest to SharedPreferences as JSON.
- * Each interest gets its own cache entry with a fetch timestamp so the
- * repository can skip the API when the cache is still fresh.
- */
+// fetched articles per-interest to savedpref
+// each interest gets a timesta,p, entry, repo can pass on API call if still frsh
 class ArticleDiskCache(context: Context) {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -58,10 +55,7 @@ class ArticleDiskCache(context: Context) {
     }
 }
 
-/**
- * Flat serializable representation of [Article] for Gson.
- * [Interest] fields are inlined so Gson doesn't need custom adapters.
- */
+// written in simpler form
 private data class CachedArticle(
     val id: String,
     val title: String,

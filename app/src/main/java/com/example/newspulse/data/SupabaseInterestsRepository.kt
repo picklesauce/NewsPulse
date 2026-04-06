@@ -136,7 +136,6 @@ class SupabaseInterestsRepository(
         return ok
     }
 
-    /** Loads profile + followed interests from Supabase; call from IO dispatcher during bootstrap. */
     suspend fun awaitInitialSync() {
         ensureUserProfileSuspend()
         reloadSuspend()

@@ -2,10 +2,7 @@ package com.example.newspulse.data.remote
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * Event Registry / NewsAPI.ai getArticles response.
- * See https://eventregistry.org / https://newsapi.ai
- */
+
 data class GetArticlesResponse(
     @SerializedName("articles") val articles: ArticlesWrapper? = null,
     @SerializedName("error") val error: ApiError? = null
