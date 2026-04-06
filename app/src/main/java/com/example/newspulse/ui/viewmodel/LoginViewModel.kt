@@ -15,7 +15,7 @@ data class LoginUiState(
     val passwordVisible: Boolean = false,
     val errorMessage: String? = null,
     val isGoogleLoading: Boolean = false,
-    /** Set true once after Google OAuth completes and session is synced; UI consumes and navigates. */
+    // Make true after Google OAuth completes
     val oauthNavigateHome: Boolean = false
 )
 
@@ -52,7 +52,6 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun updatePassword(value: String) = _uiState.update { it.copy(password = value, errorMessage = null) }
     fun togglePasswordVisible() = _uiState.update { it.copy(passwordVisible = !it.passwordVisible) }
 
-    /** Runs sign-in off the UI thread; invokes [onResult] on the main thread. */
     fun logIn(onResult: (Boolean) -> Unit) {
         val s = _uiState.value
         when {
@@ -94,6 +93,6 @@ class LoginViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     fun isOnboardingComplete(): Boolean = model.isOnboardingComplete()
 
-    /** After login/OAuth: go to Home when onboarding is done or user already has topic follows. */
+    // Go to home after login
     fun shouldSkipTopicSelection(): Boolean = model.shouldSkipTopicSelection()
 }

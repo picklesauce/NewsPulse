@@ -11,35 +11,28 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Single source of truth for the Feed (ArticleList) screen.
- * No article data or user-facing copy is hardcoded in the UI; all content comes from this state.
- */
+
+// State for the Feed (ArticleList) screen.
+
 data class FeedUiState(
     val articles: List<Article> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    /** Followed topics that are not Discover grid categories (custom / catalog interests). */
+    // Followed interests that are not on discover page
     val followedInterestNames: Set<String> = emptySet(),
-    /** Followed topics that match [DiscoverCategories.NAMES] (Discover page categories). */
     val followedCategoryNames: Set<String> = emptySet(),
     val interestFilterSectionTitle: String = "Interests",
     val categoryFilterSectionTitle: String = "Categories",
-    /**
-     * Narrow feed to these followed interest names. `null` = all followed interests included (no narrowing).
-     * Non-empty = only articles tagged with at least one of these names.
-     */
+    // Filters the feed by interests
+    // null means no filter
     val activeInterestFilters: Set<String>? = null,
-    /**
-     * Narrow feed to these followed category names. `null` = all followed categories included.
-     */
     val activeCategoryFilters: Set<String>? = null,
-    /** Shown when articles list is empty; null when there are articles. */
+    // Shown when article list is empty
     val emptyStateMessage: String? = null,
-    /** True when the feed has very few articles; UI can show a hint. */
+    // True if feed has barely any articles
     val isCoverageThin: Boolean = false,
-    /** True when the feed is populated from fallback keywords rather than user interests. */
+    // True when the feed is populated from falback keywords
     val isFallbackFeed: Boolean = false,
     val headerTitle: String = "NewsPulse",
     val searchPlaceholder: String = "Search articles...",
@@ -52,7 +45,7 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
     val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
     init {
-        // Load from cache first, then fetch from API if available (no-op for mock)
+        // Load from cache first, then fetch from API
         refreshArticles()
         viewModelScope.launch {
             model.refreshNews()
@@ -119,7 +112,6 @@ class FeedViewModel(private val model: NewsPulseModel) : ViewModel() {
         refreshArticles()
     }
 
-    /** Re-apply filters when returning to Home so the feed reflects follows from Discover. */
     fun onResumeRefresh() {
         refreshArticles()
     }

@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * Loads a single article and related articles (by shared interests via domain helper).
- * Opens from feed tap using articleId.
- */
+
+//Loads a single article and related articles (by shared interests).
+//Opens from feed tap using articleId.
+
 class ArticleDetailViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     private val _article = MutableStateFlow<Article?>(null)
@@ -24,12 +24,9 @@ class ArticleDetailViewModel(private val model: NewsPulseModel) : ViewModel() {
     private val _isSaved = MutableStateFlow(false)
     val isSaved: StateFlow<Boolean> = _isSaved.asStateFlow()
 
-    /**
-     * Loads the article and its related articles by id. Call from the screen when articleId is available
-     * (e.g. from route articleDetail/{id}). Also adds the article to reading history.
-     * If the article isn't found in the feed or saved-articles cache, refreshes saved
-     * articles from the DB and retries once.
-     */
+    
+// Loads the article and its related articles by id. Call from the screen when articleId is available
+// Also adds the article to reading history.
     fun loadArticle(articleId: String) {
         viewModelScope.launch {
             var a = model.getArticle(articleId)

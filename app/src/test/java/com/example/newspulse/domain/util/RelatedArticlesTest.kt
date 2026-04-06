@@ -33,7 +33,7 @@ class RelatedArticlesTest {
         interests: List<Interest> = emptyList()
     ) = Article(id = id, title = "Title $id", source = source, publishedAt = publishedAt, interests = interests)
 
-    // ========== Basic Functionality Tests ==========
+    // Basic functionality tests
 
     /**
      * Tests that the base article is excluded from the results.
@@ -48,7 +48,7 @@ class RelatedArticlesTest {
         assertEquals("art-2", result[0].id)
     }
 
-    // ========== Scoring Logic Tests ==========
+    // Scoring logic tests 
 
     /**
      * Normal case: Tests that articles with shared interests score higher
@@ -103,7 +103,7 @@ class RelatedArticlesTest {
         assertTrue(result.isEmpty())
     }
 
-    // ========== Advanced Scoring Tests ==========
+    // Advanced scoring tests
 
     /**
      * Edge case: Tests that articles with more shared interests score higher.

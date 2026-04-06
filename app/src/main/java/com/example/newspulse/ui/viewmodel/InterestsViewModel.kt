@@ -12,10 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Single source of truth for the Interests screen.
- * Interests list comes from ViewModel; follow toggle triggers ViewModel event ([onFollowToggle]).
- */
+// State for the interests screen
 data class InterestsUiState(
     val interestsToShow: List<Pair<InterestType, List<Interest>>> = emptyList(),
     val followedIds: Set<String> = emptySet(),
@@ -28,11 +25,7 @@ data class InterestsUiState(
     val showingFilterLabel: String = "Showing: %s"
 )
 
-/**
- * Manages interest lists and follow state.
- * - Interests list comes from [uiState.interestsToShow].
- * - Follow toggle triggers [onFollowToggle] (ViewModel event).
- */
+// Manages interest list and follow state
 class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
 
     private val _followedIds = MutableStateFlow(model.getFollowedInterestIds())
@@ -96,14 +89,12 @@ class InterestsViewModel(private val model: NewsPulseModel) : ViewModel() {
     fun onFollowToggle(id: String) {
         viewModelScope.launch {
             if (_followedIds.value.contains(id)) {
-                // Optimistically remove; revert only on confirmed DB failure.
                 _followedIds.update { it - id }
                 refreshUiState()
                 if (!model.unfollowInterestSuspend(id)) {
                     // DB failed — keep local state removed (user intent) but log is fine.
                 }
             } else {
-                // Optimistically add so the chip turns purple immediately.
                 _followedIds.update { it + id }
                 refreshUiState()
                 model.followInterestSuspend(id)
