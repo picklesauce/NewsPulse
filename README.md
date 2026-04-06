@@ -37,7 +37,7 @@ We are a group of CS students who are the absolute best at building great projec
 
 ### Releases
 
-* [TODO - ADD RELEASE DOCS]
+* [Version 1.0.0 Release](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Version-1.0.0-Release) — release notes, APK, and grader notes (create this Wiki page using `docs/release-wiki-template.md`).
 
 ---
 
@@ -52,7 +52,7 @@ We are a group of CS students who are the absolute best at building great projec
 
 ## 3. User Guide
 
-* [Getting Started (TODO)]
+* [Getting Started (repository)](docs/getting-started.md) — clone, `local.properties`, build, test; for a matching Wiki page, link it here after you publish.
 * [Usage Guide](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Usage-Guide)
 
 ---
@@ -69,8 +69,9 @@ We are a group of CS students who are the absolute best at building great projec
 **For the TA**
 
 * **Build:** `./gradlew assembleDebug` should succeed; run the app on an emulator or device as above.
-* **API key:** If `NEWSAPI_AI_KEY` is unset, the app still runs with mock data - note when grading live article features.
-* **Tests:** `./gradlew testDebugUnitTest` - unit tests for selected ViewModels and domain utilities.
+* **Secrets:** Copy `local.properties.example` to `local.properties` and add keys your team provides on the **Version 1.0.0** Wiki page (or use the submitted APK built with those keys). Never commit `local.properties`.
+* **API key:** If `NEWSAPI_AI_KEY` is unset, the app still runs with mock data — note when grading live article features.
+* **Tests:** `./gradlew testDebugUnitTest` — unit tests for selected ViewModels and domain utilities.
 
 
 ---

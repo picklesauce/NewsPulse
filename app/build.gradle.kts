@@ -1,5 +1,8 @@
 import java.util.Properties
 
+/** Product version for course releases (semantic versioning). Final course release: 1.0.x */
+val VERSION = "1.0.0"
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -10,7 +13,8 @@ plugins {
 val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.reader()?.use { load(it) }
 }
-val newsApiKey: String = localProperties.getProperty("NEWSAPI_AI_KEY", "fa9bfdc7-22d1-40cf-806a-bd2380a1ad66")
+// No default: avoids embedding keys in the repo; use local.properties (see local.properties.example).
+val newsApiKey: String = localProperties.getProperty("NEWSAPI_AI_KEY", "")
 val llmApiKey: String = localProperties.getProperty("LLM_API_KEY", "")
 val llmApiUrl: String = localProperties.getProperty("LLM_API_URL", "")
 val llmModel: String = localProperties.getProperty("LLM_MODEL", "")
@@ -30,7 +34,7 @@ android {
         minSdk = 34
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = VERSION
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

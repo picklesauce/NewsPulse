@@ -1,7 +1,24 @@
-GEMINI_API_KEY=...
-GEMINI_MODEL=...
-NEWSAPI_AI_KEY=...
-RELATED_ARTICLES_LLM_ENABLED=...
-SUPABASE_ANON_KEY=...
-SUPABASE_URL=...
-sdk.dir=C\:\\Users\\aadit\\AppData\\Local\\Android\\Sdk
+# Copy this file to `local.properties` in the project root and fill in values.
+# `local.properties` is listed in `.gitignore` — never commit real keys.
+#
+# Android Studio usually adds `sdk.dir=...` automatically when you open the project.
+
+# --- News (Event Registry / newsapi.ai) ---
+# Required for live articles. Without it, the app runs with mock article data.
+# https://newsapi.ai/
+NEWSAPI_AI_KEY=
+
+# --- Supabase (auth + cloud preferences) ---
+# Leave blank to use local/offline auth behavior where applicable.
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+
+# --- Optional: related-article LLM ranking (Gemini) ---
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+RELATED_ARTICLES_LLM_ENABLED=false
+
+# Optional OpenAI-compatible endpoint (if you use it instead of Gemini):
+LLM_API_KEY=
+LLM_API_URL=
+LLM_MODEL=
