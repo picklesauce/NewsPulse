@@ -29,7 +29,7 @@ We are a group of CS students who are the absolute best at building great projec
 
 ### Demo video
 
-* [TODO - MAKE AND LINK VIDEO](https://www.youtube.com/) 
+* [NewsPulse Demo](https://www.youtube.com/shorts/5KZaRocHm0k) 
 
 ### Acknowledgements
 
