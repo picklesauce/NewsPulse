@@ -61,5 +61,5 @@ For the **final course release**, the team should either:
 ## Troubleshooting
 
 - **Gradle cannot find SDK:** Open the project in Android Studio once so it writes `sdk.dir` into `local.properties`, or set `ANDROID_HOME` and point `sdk.dir` at your SDK path.
-- **No live articles:** `NEWSAPI_AI_KEY` is missing or invalid — expected behavior is mock data; confirm the key in `local.properties`.
+- **No live articles:** `NEWSAPI_AI_KEY` is missing or invalid - expected behavior is mock data; confirm the key in `local.properties`.
 - **Supabase errors:** Check URL and anon key; anon keys are not as sensitive as service keys but should still only be shared through agreed channels (e.g. team wiki for graders).
