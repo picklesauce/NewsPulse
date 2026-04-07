@@ -37,7 +37,7 @@ We are a group of CS students who are the absolute best at building great projec
 
 ### Releases
 
-* [Version 1.0.0 Release (wiki)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Version-1.0.0-Release) — release date, changes, install instructions, grader notes.
+* [Version 1.0.0 Release (wiki)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Version-1.0.0-Release) - release date, changes, install instructions, grader notes.
 * [GitLab Release v1.0.0](https://git.uwaterloo.ca/a44shah/team-101-17/-/releases/v1.0.0) — tagged source archives + APK download link (Release assets; large APKs cannot be attached to the wiki).
 
 ---
