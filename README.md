@@ -72,7 +72,7 @@ We are a group of CS students who are the absolute best at building great projec
 * **Build:** `./gradlew assembleDebug` should succeed; run the app on an emulator or device as above.
 * **Secrets:** Copy `local.properties.example` to `local.properties` and add keys your team provides on the **Version 1.0.0** Wiki page (or use the submitted APK built with those keys). Never commit `local.properties`.
 * **API key:** If `NEWSAPI_AI_KEY` is unset, the app still runs with mock data — note when grading live article features.
-* **Tests:** `./gradlew testDebugUnitTest` — unit tests for selected ViewModels and domain utilities.
+* **Tests:** `./gradlew testDebugUnitTest` and `./gradlew test`— unit tests for selected ViewModels and domain utilities.
 
 
 ---
