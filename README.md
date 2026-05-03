@@ -33,35 +33,35 @@ We are a group of CS students who are the absolute best at building great projec
 
 ### Acknowledgements
 
-* [Acknowledgements](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Acknowledgements)
+* [Acknowledgements](https://github.com/picklesauce/NewsPulse/wiki/Acknowledgements)
 
 ### Releases
 
-* [Version 1.0.0 Release (wiki)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Version-1.0.0-Release) - release date, changes, install instructions, grader notes.
-* [GitLab Release v1.0.0](https://git.uwaterloo.ca/a44shah/team-101-17/-/releases/v1.0.0) — tagged source archives + APK download link (Release assets; large APKs cannot be attached to the wiki).
+* [Version 1.0.0 Release (wiki)](https://github.com/picklesauce/NewsPulse/wiki/Version-1.0.0-Release) — release date, changes, install instructions, grader notes.
+* [GitHub Release v1.0.0](https://github.com/picklesauce/NewsPulse/releases/tag/v1.0.0) — tagged source archives + APK download link (release assets; large APKs are not hosted on the wiki).
 
 ---
 
 ## 2. Project Information
 
-* [Team Contract](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Contract)
-* [Project Proposal](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Project-Proposal)
-* [Meeting Minutes (Team Meetings)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Meetings)
-* [Team Reflections](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Team-Reflections)
+* [Team Contract](https://github.com/picklesauce/NewsPulse/wiki/Team-Contract)
+* [Project Proposal](https://github.com/picklesauce/NewsPulse/wiki/Project-Proposal)
+* [Meeting Minutes (Team Meetings)](https://github.com/picklesauce/NewsPulse/wiki/Team-Meetings)
+* [Team Reflections](https://github.com/picklesauce/NewsPulse/wiki/Team-Reflections)
 
 ---
 
 ## 3. User Guide
 
-* [Getting Started (repository)](docs/getting-started.md) — clone, `local.properties`, build, test; for a matching Wiki page, link it here after you publish.
-* [Usage Guide](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Usage-Guide)
+* [Getting Started (repository)](docs/getting-started.md) — clone, `local.properties`, build, test; optional matching [Wiki](https://github.com/picklesauce/NewsPulse/wiki) page if you publish one.
+* [Usage Guide](https://github.com/picklesauce/NewsPulse/wiki/Usage-Guide)
 
 ---
 
 ## 4. Design Documents
 
-* [UML / ERD (Mermaid)](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/NewsPulse-UML-Diagram)
-* [Class diagrams](https://git.uwaterloo.ca/a44shah/team-101-17/-/wikis/Class-Diagrams)
+* [UML / ERD (Mermaid)](https://github.com/picklesauce/NewsPulse/wiki/NewsPulse-UML-Diagram)
+* [Class diagrams](https://github.com/picklesauce/NewsPulse/wiki/Class-Diagrams)
 
 ---
 
@@ -70,7 +70,7 @@ We are a group of CS students who are the absolute best at building great projec
 **For the TA**
 
 * **Build:** `./gradlew assembleDebug` should succeed; run the app on an emulator or device as above.
-* **Secrets:** Copy `local.properties.example` to `local.properties` and add keys your team provides on the **Version 1.0.0** Wiki page (or use the submitted APK built with those keys). Never commit `local.properties`.
+* **Secrets:** Copy `local.properties.example` to `local.properties` and add keys your team provides on the **[Version 1.0.0 Release](https://github.com/picklesauce/NewsPulse/wiki/Version-1.0.0-Release)** wiki page (or use the submitted APK built with those keys). Never commit `local.properties`.
 * **API key:** If `NEWSAPI_AI_KEY` is unset, the app still runs with mock data — note when grading live article features.
 * **Tests:** `./gradlew testDebugUnitTest` and `./gradlew test`— unit tests for selected ViewModels and domain utilities.
 

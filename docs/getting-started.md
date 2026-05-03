@@ -34,7 +34,7 @@ Secrets and machine-specific settings live in **`local.properties`** at the proj
 For the **final course release**, the team should either:
 
 - Attach a **release APK** built with the needed keys (so installers do not need to build), and/or  
-- Publish **grader-only** configuration (e.g. on the GitLab Wiki release page) so a TA can copy values into `local.properties` and build with full features.
+- Publish **grader-only** configuration (e.g. on the GitHub Wiki release page) so a TA can copy values into `local.properties` and build with full features.
 
 ## Build and run
 
